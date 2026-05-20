@@ -5032,7 +5032,15 @@ async function doLogout(){
   document.getElementById('loginPassword').value='';
 }
 
+function _cleanLegacyStorage(){
+  ['demoEintrVer','demoFuhrparkVer','diekjobst_daten','diekjobst_deleted',
+   'fzInitVer','pruefAmpelCfg','pruefStatus','repairEintraege','schadenData',
+   'standorteData','tankKontrollSettings','tdTankEintraege','tzFahrzeuge']
+  .forEach(k=>localStorage.removeItem(k));
+}
+
 async function showApp(){
+  _cleanLegacyStorage();
   document.getElementById('loginOverlay').style.display='none';
   document.getElementById('logoutBtn').style.display='';
   const {data:{session}}=await _sb.auth.getSession();
@@ -5198,8 +5206,41 @@ function renderFpDashboard(){
 /* ══ FAHRZEUGE ══ */
 let currentFzId=null, currentTankKz=null;
 
-function loadFahrzeuge(){try{return JSON.parse(localStorage.getItem('tzFahrzeuge')||'[]');}catch(e){return[];}}
-function saveFzData(d){localStorage.setItem('tzFahrzeuge',JSON.stringify(d));}
+// ── Fahrzeuge: Supabase Cache ──────────────────────────────────
+let _fzCache=[];
+
+async function _fzSyncFromSupabase(){
+  const[{data:fzRows,error:e1},{data:tRows}]=await Promise.all([
+    _sb.from('fahrzeuge').select('*').order('kennzeichen'),
+    _sb.from('tankdaten').select('*').order('datum')
+  ]);
+  if(e1){console.error('fz sync:',e1);return;}
+  _fzCache=(fzRows||[]).map(f=>({
+    id:f.id,
+    kennzeichen:f.kennzeichen,
+    bezeichnung:f.bezeichnung||'',
+    typ:f.typ||'mull',
+    huFaellig:f.hu_faellig,
+    spFaellig:f.sp_faellig,
+    uvvFaellig:f.uvv_faellig,
+    tachoFaellig:f.tacho_faellig,
+    wartungIntervallKm:f.wartung_intervall_km,
+    wartungLetzteKm:f.wartung_letzte_km,
+    tankEintraege:(tRows||[]).filter(t=>t.fahrzeug_id===f.id).map(t=>({
+      _sbId:t.id,
+      datum:t.datum,
+      km:t.km_stand,
+      liter:t.liter,
+      adblue:t.adblue,
+      preis:t.kosten,
+      quelle:t.quelle||'einzel',
+      betriebsstunden:t.betriebsstunden
+    }))
+  }));
+}
+
+function loadFahrzeuge(){return _fzCache;}
+function saveFzData(d){_fzCache=d;}
 function genFzId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 
 const _AMPEL_TYPES=['HU','SP','UVV','Tacho'];
@@ -5875,38 +5916,37 @@ function calcFzWartung(){
   const km=+document.getElementById('fz-wkm').value||0;
   document.getElementById('fz-wnext').value=(int&&km)?(km+int).toLocaleString('de-DE')+' km':'–';
 }
-function saveFzModal(){
+async function saveFzModal(){
   const kz=document.getElementById('fz-kz').value.trim().toUpperCase();
   if(!kz){alert('Bitte Kennzeichen eingeben.');return;}
-  const fzData=loadFahrzeuge();
+  const payload={
+    kennzeichen:kz,
+    bezeichnung:document.getElementById('fz-bez').value.trim(),
+    typ:document.getElementById('fz-typ').value,
+    hu_faellig:document.getElementById('fz-hu').value||null,
+    sp_faellig:document.getElementById('fz-sp').value||null,
+    uvv_faellig:document.getElementById('fz-uvv').value||null,
+    tacho_faellig:document.getElementById('fz-tacho').value||null,
+    wartung_intervall_km:+document.getElementById('fz-wint').value||null,
+    wartung_letzte_km:+document.getElementById('fz-wkm').value||null
+  };
+  let sbErr;
   if(currentFzId){
-    const idx=fzData.findIndex(f=>f.id===currentFzId);
-    if(idx>-1){
-      fzData[idx]={...fzData[idx],kennzeichen:kz,bezeichnung:document.getElementById('fz-bez').value.trim(),
-        typ:document.getElementById('fz-typ').value,
-        huFaellig:document.getElementById('fz-hu').value||null,
-        spFaellig:document.getElementById('fz-sp').value||null,
-        uvvFaellig:document.getElementById('fz-uvv').value||null,
-        tachoFaellig:document.getElementById('fz-tacho').value||null,
-        wartungIntervallKm:+document.getElementById('fz-wint').value||null,
-        wartungLetzteKm:+document.getElementById('fz-wkm').value||null};
-    }
+    ({error:sbErr}=await _sb.from('fahrzeuge').update(payload).eq('id',currentFzId));
   }else{
-    fzData.push({id:genFzId(),kennzeichen:kz,bezeichnung:document.getElementById('fz-bez').value.trim(),
-      typ:document.getElementById('fz-typ').value,
-      huFaellig:document.getElementById('fz-hu').value||null,
-      spFaellig:document.getElementById('fz-sp').value||null,
-      uvvFaellig:document.getElementById('fz-uvv').value||null,
-      tachoFaellig:document.getElementById('fz-tacho').value||null,
-      wartungIntervallKm:+document.getElementById('fz-wint').value||null,
-      wartungLetzteKm:+document.getElementById('fz-wkm').value||null,
-      tankEintraege:[]});
+    ({error:sbErr}=await _sb.from('fahrzeuge').insert(payload));
   }
-  saveFzData(fzData);closeFzModal();renderFahrzeuge();
+  if(sbErr){alert('Fehler beim Speichern: '+sbErr.message);return;}
+  await _fzSyncFromSupabase();
+  closeFzModal();
+  renderFahrzeuge();
 }
-function deleteFz(id){
+async function deleteFz(id){
   if(!confirm('Fahrzeug und alle Tankdaten löschen?'))return;
-  saveFzData(loadFahrzeuge().filter(f=>f.id!==id));renderFahrzeuge();
+  const{error}=await _sb.from('fahrzeuge').delete().eq('id',id);
+  if(error){console.error(error);return;}
+  await _fzSyncFromSupabase();
+  renderFahrzeuge();
 }
 
 /* TANK MODAL */
@@ -5955,53 +5995,57 @@ function renderTankHist(fz){
       <td class="del" onclick="deleteTankEntryInModal(${i})" title="Löschen">✕</td>
     </tr>`).join('');
 }
-function saveTankEntry(){
+async function saveTankEntry(){
   const datum=document.getElementById('tank-datum').value;
   if(!datum){alert('Bitte Datum angeben.');return;}
-  /* if opened from protokoll view, use selector value */
   const fromProto=!currentTankKz;
   const targetId=fromProto?document.getElementById('tank-fz-select').value:currentTankKz;
   if(!targetId){alert('Bitte Fahrzeug auswählen.');return;}
-  const entry={datum,km:+document.getElementById('tank-km').value||null,
+  const{error}=await _sb.from('tankdaten').insert({
+    fahrzeug_id:targetId,
+    datum,
+    km_stand:+document.getElementById('tank-km').value||null,
     liter:+document.getElementById('tank-liter').value||null,
     adblue:+document.getElementById('tank-adblue').value||null,
-    preis:+document.getElementById('tank-preis').value||null,
-    quelle:'einzel'};
-  const fzData=loadFahrzeuge();
-  const fz=fzData.find(f=>f.id===targetId);
-  if(!fz)return;
-  fz.tankEintraege=[...(fz.tankEintraege||[]),entry];
-  saveFzData(fzData);
+    kosten:+document.getElementById('tank-preis').value||null,
+    quelle:'einzel'
+  });
+  if(error){alert('Fehler: '+error.message);return;}
   document.getElementById('tank-km').value='';
   document.getElementById('tank-liter').value='';
   document.getElementById('tank-adblue').value='';
   document.getElementById('tank-preis').value='';
+  await _fzSyncFromSupabase();
   if(fromProto){
     closeTankModal();
     renderTankProtokoll();
   }else{
-    renderTankHist(fz);renderFahrzeuge();
+    const fz=loadFahrzeuge().find(f=>f.id===targetId);
+    if(fz)renderTankHist(fz);
+    renderFahrzeuge();
   }
 }
-function deleteTankEntryInModal(idx){
+async function deleteTankEntryInModal(idx){
   if(!confirm('Eintrag löschen?'))return;
-  const fzData=loadFahrzeuge();
-  const fz=fzData.find(f=>f.id===currentTankKz);
+  const fz=loadFahrzeuge().find(f=>f.id===currentTankKz);
   if(!fz)return;
   const sorted=[...fz.tankEintraege].sort((a,b)=>b.datum>a.datum?1:-1);
   const toDelete=sorted[idx];
-  fz.tankEintraege=fz.tankEintraege.filter(t=>t!==toDelete);
-  saveFzData(fzData);renderTankHist(fz);renderFahrzeuge();
+  if(toDelete?._sbId)await _sb.from('tankdaten').delete().eq('id',toDelete._sbId);
+  await _fzSyncFromSupabase();
+  const fzUpdated=loadFahrzeuge().find(f=>f.id===currentTankKz);
+  if(fzUpdated)renderTankHist(fzUpdated);
+  renderFahrzeuge();
 }
-function deleteTankEntry(fzId,sortedIdx){
+async function deleteTankEntry(fzId,sortedIdx){
   if(!confirm('Eintrag löschen?'))return;
-  const fzData=loadFahrzeuge();
-  const fz=fzData.find(f=>f.id===fzId);
+  const fz=loadFahrzeuge().find(f=>f.id===fzId);
   if(!fz)return;
   const sorted=[...fz.tankEintraege].sort((a,b)=>b.datum>a.datum?1:-1);
   const toDelete=sorted[sortedIdx];
-  fz.tankEintraege=fz.tankEintraege.filter(t=>t!==toDelete);
-  saveFzData(fzData);renderFahrzeuge();
+  if(toDelete?._sbId)await _sb.from('tankdaten').delete().eq('id',toDelete._sbId);
+  await _fzSyncFromSupabase();
+  renderFahrzeuge();
 }
 
 /* ══ AUSWERTUNG ══ */
@@ -6143,7 +6187,7 @@ function showModule(m){
     else if(last==='ki'){initKiPage();}
   }else if(m==='fuhrpark'){
     document.getElementById('page-fuhrpark').classList.add('active');
-    showFpView(fpCurrentView||'dashboard');
+    _fzSyncFromSupabase().then(()=>showFpView(fpCurrentView||'dashboard'));
   }else if(m==='personal'){
     document.getElementById('page-personal').classList.add('active');
   }else if(m==='standorte'){
@@ -6742,21 +6786,21 @@ function renderLkwRows(){
 }
 function addLkwNachweisRow(){_lkwRows.push({datum:'',km:'',diesel:'',adblue:''});renderLkwRows();}
 function removeLkwRow(i){_lkwRows.splice(i,1);renderLkwRows();}
-function saveLkwNachweis(){
+async function saveLkwNachweis(){
   const fzId=document.getElementById('lkw-nachweis-fz').value;
   if(!fzId){alert('Bitte Fahrzeug wählen.');return;}
   const valid=_lkwRows.filter(r=>r.datum&&(r.diesel||r.adblue));
   if(!valid.length){alert('Bitte mindestens eine Zeile mit Datum und Liter ausfüllen.');return;}
-  const fzData=loadFahrzeuge();
-  const fz=fzData.find(f=>f.id===fzId);
-  if(!fz)return;
-  valid.forEach(r=>{
-    fz.tankEintraege=[...(fz.tankEintraege||[]),{
-      datum:r.datum,km:+r.km||null,
-      liter:+r.diesel||null,adblue:+r.adblue||null,
-      preis:null,quelle:'lkw-nachweis'}];
-  });
-  saveFzData(fzData);
+  const{error}=await _sb.from('tankdaten').insert(valid.map(r=>({
+    fahrzeug_id:fzId,
+    datum:r.datum,
+    km_stand:+r.km||null,
+    liter:+r.diesel||null,
+    adblue:+r.adblue||null,
+    quelle:'lkw-nachweis'
+  })));
+  if(error){alert('Fehler: '+error.message);return;}
+  await _fzSyncFromSupabase();
   closeLkwNachweis();
   toast(valid.length+' Eintr\xe4ge gespeichert.');
   if(fpCurrentView==='tankdaten')renderTankProtokoll();
@@ -6801,20 +6845,20 @@ function renderMRows(){
 }
 function addMaschinenListeRow(){_mRows.push({datum:'',betriebsstunden:'',liter:''});renderMRows();}
 function removeMRow(i){_mRows.splice(i,1);renderMRows();}
-function saveMaschinenListe(){
+async function saveMaschinenListe(){
   const fzId=document.getElementById('maschinen-liste-fz').value;
   if(!fzId){alert('Bitte Maschine wählen.');return;}
   const valid=_mRows.filter(r=>r.datum&&r.liter);
   if(!valid.length){alert('Bitte mindestens eine Zeile mit Datum und Liter ausfüllen.');return;}
-  const fzData=loadFahrzeuge();
-  const fz=fzData.find(f=>f.id===fzId);
-  if(!fz)return;
-  valid.forEach(r=>{
-    fz.tankEintraege=[...(fz.tankEintraege||[]),{
-      datum:r.datum,betriebsstunden:+r.betriebsstunden||null,
-      liter:+r.liter||null,preis:null,quelle:'maschinen-liste'}];
-  });
-  saveFzData(fzData);
+  const{error}=await _sb.from('tankdaten').insert(valid.map(r=>({
+    fahrzeug_id:fzId,
+    datum:r.datum,
+    betriebsstunden:+r.betriebsstunden||null,
+    liter:+r.liter||null,
+    quelle:'maschinen-liste'
+  })));
+  if(error){alert('Fehler: '+error.message);return;}
+  await _fzSyncFromSupabase();
   closeMaschinenListe();
   toast(valid.length+' Eintr\xe4ge gespeichert.');
   if(fpCurrentView==='tankdaten')renderTankProtokoll();
