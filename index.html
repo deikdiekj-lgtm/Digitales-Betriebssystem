@@ -5916,8 +5916,6 @@ function calcFzWartung(){
   const km=+document.getElementById('fz-wkm').value||0;
   document.getElementById('fz-wnext').value=(int&&km)?(km+int).toLocaleString('de-DE')+' km':'–';
 }
-function _fzDateVal(id){const v=document.getElementById(id).value;if(!v)return null;return v.length===7?v+'-01':v;}
-
 async function saveFzModal(){
   const kz=document.getElementById('fz-kz').value.trim().toUpperCase();
   if(!kz){alert('Bitte Kennzeichen eingeben.');return;}
@@ -5925,10 +5923,10 @@ async function saveFzModal(){
     kennzeichen:kz,
     bezeichnung:document.getElementById('fz-bez').value.trim(),
     typ:document.getElementById('fz-typ').value,
-    hu_faellig:_fzDateVal('fz-hu'),
-    sp_faellig:_fzDateVal('fz-sp'),
-    uvv_faellig:_fzDateVal('fz-uvv'),
-    tacho_faellig:_fzDateVal('fz-tacho'),
+    hu_faellig:document.getElementById('fz-hu').value||null,
+    sp_faellig:document.getElementById('fz-sp').value||null,
+    uvv_faellig:document.getElementById('fz-uvv').value||null,
+    tacho_faellig:document.getElementById('fz-tacho').value||null,
     wartung_intervall_km:+document.getElementById('fz-wint').value||null,
     wartung_letzte_km:+document.getElementById('fz-wkm').value||null
   };
