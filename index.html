@@ -842,12 +842,7 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
     </button>
     <!-- Subnav Actions (rechts) -->
     <div class="subnav-actions">
-      <button class="btn-subnav" id="folderBtn" onclick="selectRootFolder()" title="Speicherordner wählen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <span id="folderDot" style="width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .2s;display:inline-block"></span>
-        Ordner
-      </button>
-      <span id="folderStatus" style="display:none">Kein Ordner verbunden</span>
+      <span id="folderStatus" style="display:none"></span>
       <button class="btn-subnav" onclick="printTageszettel()" title="Tageszettel drucken">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Drucken
@@ -3417,7 +3412,9 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
 /* ══ DOCUMENT STORE (in-memory, session-scoped) ══ */
 const DOC_STORE={};  // belegnr -> {tz:{dataUrl,name,type}, ws:{dataUrl,name,type}}
 let _tzFileData=null, _wsFileData=null;  // pending during scan
-let _rootDirHandle=null; // File System Access API handle
+let _rootDirHandle=null; // kept for legacy compat, unused
+let _tzCache=null, _tzInitPromise=null;
+let _docModalWsItems=[];
 
 function readFileAsDataURL(file){
   return new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.readAsDataURL(file)});
@@ -3474,6 +3471,55 @@ async function saveFileToFolder(subFolder,fileName,dataUrl){
   }
 }
 
+/* ══ TAGESZETTEL — Supabase Sync ══ */
+async function _tzSyncFromSupabase(){
+  const [{data:tzRows,error:e1},{data:dRows}]=await Promise.all([
+    _sb.from('tageszettel').select('*').order('datum',{ascending:false}),
+    _sb.from('tageszettel_dateien').select('*')
+  ]);
+  if(e1){console.error('TZ sync:',e1);_tzCache=_tzCache||[];return;}
+  const deiMap={};
+  for(const d of(dRows||[])){
+    if(!deiMap[d.belegnr])deiMap[d.belegnr]={tz:null,wiegescheine:[]};
+    if(d.typ==='tz')deiMap[d.belegnr].tz=d;
+    else deiMap[d.belegnr].wiegescheine.push(d);
+  }
+  _tzCache=(tzRows||[]).map(r=>({
+    belegnr:r.belegnr,datum:r.datum,fahrer:r.fahrer,lader:r.lader,lader2:r.lader2,
+    kennzeichen:r.kennzeichen,touren:r.touren,tournr:r.tournr,
+    kmStart:r.km_start,kmEnde:r.km_ende,kmGesamt:r.km_gesamt,
+    zeitBeginn:r.zeit_beginn,zeitEnde:r.zeit_ende,pause:r.pause,
+    gebiet:r.gebiet,tourBeginn:r.tour_beginn,tourEnde:r.tour_ende,
+    besonderheiten:r.besonderheiten,fraktion:r.fraktion,
+    gewicht:r.gewicht,wiegeschein:r.wiegeschein,
+    status:r.status,abladeorte:r.abladeorte||[],
+    abladeort:(r.abladeorte||[]).map(a=>a.ort),
+    _sbId:r.id,_sbDatei:deiMap[r.belegnr]||null
+  }));
+}
+function initTageszettel(){
+  _tzInitPromise=_tzSyncFromSupabase();
+  return _tzInitPromise;
+}
+async function _uploadTzDateien(belegnr,datum,rawEntry){
+  if(_tzFileData){
+    const ext=(_tzFileData.name||'').split('.').pop()||'pdf';
+    const path=`${belegnr}/tz_${datum}.${ext}`;
+    await _sb.storage.from('tageszettel').upload(path,dataUrlToBlob(_tzFileData.dataUrl),{upsert:true});
+    await _sb.from('tageszettel_dateien').delete().eq('belegnr',belegnr).eq('typ','tz');
+    await _sb.from('tageszettel_dateien').insert({belegnr,typ:'tz',dateiname:_tzFileData.name,storage_path:path});
+  }
+  for(const a of(rawEntry.abladeorte||[])){
+    if(!a._wsFile)continue;
+    const ext=(a._wsFile.name||'').split('.').pop()||'pdf';
+    const safe=(a.ort||'WS').replace(/[^a-zA-Z0-9_\-]/g,'_');
+    const path=`${belegnr}/ws_${safe}_${datum}.${ext}`;
+    await _sb.storage.from('tageszettel').upload(path,dataUrlToBlob(a._wsFile.dataUrl),{upsert:true});
+    await _sb.from('tageszettel_dateien').delete().eq('belegnr',belegnr).eq('abladeort',a.ort).eq('typ','ws');
+    await _sb.from('tageszettel_dateien').insert({belegnr,typ:'ws',dateiname:a._wsFile.name,storage_path:path,abladeort:a.ort,ws_nr:a.wiegeschein||null});
+  }
+}
+
 /* ══ UTILS ── Datum ══ */
 function ago(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10)}
 
@@ -3488,7 +3534,8 @@ let editingNr=null;
 let _editTzFile=null; // TZ file uploaded in edit modal
 
 /* ══ INIT ══ */
-function init(){
+async function init(){
+  await initTageszettel();
   allData=buildAllData();
   refreshDrops();
   document.getElementById('fVon').value='';
@@ -3721,27 +3768,13 @@ function startScan(){
   updateFolderSetupCard();
 }
 function updateFolderSetupCard(){
+  // Supabase handles storage — no local folder required
   const setupCard=document.getElementById('folderSetupCard');
+  if(setupCard)setupCard.style.display='none';
   const connCard=document.getElementById('folderConnectedCard');
-  const connName=document.getElementById('folderConnectedName');
+  if(connCard)connCard.style.display='none';
   const scanZone=document.getElementById('scanZone');
-  if(_rootDirHandle){
-    // Ordner verbunden: Karte ausblenden, Bestätigung + Scan-Zone zeigen
-    if(setupCard)setupCard.style.display='none';
-    if(connCard){connCard.style.display='flex';if(connName)connName.textContent=_rootDirHandle.name;}
-    if(scanZone)scanZone.style.display='';
-    updateFolderStatus();
-  } else if(window.showDirectoryPicker){
-    // Kein Ordner, Browser unterstützt API: Karte zeigen, Scan-Zone verstecken
-    if(setupCard)setupCard.style.display='';
-    if(connCard)connCard.style.display='none';
-    if(scanZone)scanZone.style.display='none';
-  } else {
-    // Browser ohne File System API: direkt zur Scan-Zone
-    if(setupCard)setupCard.style.display='none';
-    if(connCard)connCard.style.display='none';
-    if(scanZone)scanZone.style.display='';
-  }
+  if(scanZone)scanZone.style.display='';
 }
 function skipFolderSetup(){
   const setupCard=document.getElementById('folderSetupCard');
@@ -4122,84 +4155,42 @@ function buildReview(entry,containerId){
   </div>`;
 }
 
-function archiveEntry(){
+async function archiveEntry(){
   try{
-    /* ── 1. Daten aus bereits validiertem _pendingEntry (gesetzt in goToKontrolle) ── */
     const rawEntry=window._pendingEntry;
     if(!rawEntry||!rawEntry.belegnr||rawEntry.belegnr==='–'||!rawEntry.datum||!rawEntry.fahrer){
       alert('Keine gültigen Eintragsdaten gefunden – bitte gehen Sie zurück und füllen Sie das Formular neu aus.');
       return;
     }
-
-    /* ── 2. Für localStorage: _wsFile aus abladeorte entfernen ── */
     const abladeorteSave=(rawEntry.abladeorte||[]).map(({_wsFile,...rest})=>rest);
-    const toSave={
-      ...rawEntry,
-      abladeorte: abladeorteSave,
-      status:     'archived'
+    const toSave={...rawEntry,abladeorte:abladeorteSave,status:'archived'};
+    const payload={
+      belegnr:toSave.belegnr,datum:toSave.datum,fahrer:toSave.fahrer,
+      lader:toSave.lader||null,lader2:toSave.lader2||null,
+      kennzeichen:toSave.kennzeichen||null,touren:toSave.touren||null,
+      tournr:toSave.tournr||null,km_start:toSave.kmStart??null,
+      km_ende:toSave.kmEnde??null,km_gesamt:toSave.kmGesamt??null,
+      zeit_beginn:toSave.zeitBeginn||null,zeit_ende:toSave.zeitEnde||null,
+      pause:toSave.pause??null,gebiet:toSave.gebiet||null,
+      tour_beginn:toSave.tourBeginn||null,tour_ende:toSave.tourEnde||null,
+      besonderheiten:toSave.besonderheiten||null,fraktion:toSave.fraktion||null,
+      gewicht:toSave.gewicht??null,wiegeschein:toSave.wiegeschein||null,
+      status:'archived',abladeorte:toSave.abladeorte
     };
-
-    /* ── 3. In localStorage speichern ── */
-    let arr=[];
-    try{ arr=JSON.parse(localStorage.getItem('diekjobst_daten')||'[]');}catch(_){arr=[];}
-    const idx=arr.findIndex(x=>x.belegnr===toSave.belegnr);
-    if(idx>=0) arr[idx]=toSave; else arr.push(toSave);
-    localStorage.setItem('diekjobst_daten',JSON.stringify(arr));
-    // Belegnr aus Deleted-Liste entfernen (sicherheitshalber, falls Kollision mit gelöschtem Eintrag)
-    const cleanDeleted=lsGet('diekjobst_deleted').filter(nr=>nr!==toSave.belegnr);
-    localStorage.setItem('diekjobst_deleted',JSON.stringify(cleanDeleted));
-
-    /* ── 4. Globalen State aktualisieren ── */
+    const{error:sbErr}=await _sb.from('tageszettel').upsert(payload,{onConflict:'belegnr'});
+    if(sbErr){alert('Fehler beim Speichern:\n'+sbErr.message);return;}
+    await _uploadTzDateien(toSave.belegnr,toSave.datum,rawEntry);
+    await _tzSyncFromSupabase();
     allData=buildAllData();
     refreshDrops();
-
-    /* ── 5. Dokumente asynchron sichern ── */
-    saveDocsAfterArchive(rawEntry, toSave);
-
-    /* ── 6. Erfolgsseite anzeigen (Zum Archiv → ruft showPage('archiv') auf) ── */
-    set('savedNr', toSave.belegnr);
+    set('savedNr',toSave.belegnr);
     setStep(5);
     toast('✓ Archiviert: '+toSave.belegnr);
-
   }catch(err){
-    alert('Fehler beim Archivieren:\n'+err.message+'\n\n'+err.stack);
+    alert('Fehler beim Archivieren:\n'+err.message);
   }
 }
-
-async function saveDocsAfterArchive(entry, saved){
-  // DOC_STORE befüllen
-  const abladeorte=entry.abladeorte||[];
-  const tzExt=(_tzFileData?.name||'').split('.').pop()||'pdf';
-  DOC_STORE[saved.belegnr]={
-    tz:_tzFileData?{..._tzFileData,displayName:`${saved.belegnr}_Tageszettel_${saved.datum}.${tzExt}`}:null,
-    wiegescheine:abladeorte.filter(a=>a._wsFile).map(a=>{
-      const ext=(a._wsFile.name||'file').split('.').pop()||'pdf';
-      return{...a._wsFile,ort:a.ort,wsNr:a.wiegeschein,
-        displayName:`${saved.belegnr}_${a.wiegeschein||'WS'}_${a.ort}_${saved.datum}.${ext}`};
-    })
-  };
-  // Ordner verbunden → direkt speichern
-  if(_rootDirHandle){
-    const docs=DOC_STORE[saved.belegnr];
-    if(docs.tz)await saveFileToFolder('Tageszettel',docs.tz.displayName,docs.tz.dataUrl);
-    for(const ws of (docs.wiegescheine||[]))
-      await saveFileToFolder('Wiegenoten',ws.displayName,ws.dataUrl);
-    return;
-  }
-}
-async function saveDocsLocally(entry, docs){
-  if(!_rootDirHandle||!docs)return;
-  let saved=0;
-  if(docs.tz){
-    const ok=await saveFileToFolder('Tageszettel',docs.tz.displayName,docs.tz.dataUrl);
-    if(ok)saved++;
-  }
-  for(const ws of (docs.wiegescheine||[])){
-    const ok=await saveFileToFolder('Wiegenoten',ws.displayName,ws.dataUrl);
-    if(ok)saved++;
-  }
-  if(saved>0)toast(`✓ ${saved} Datei${saved>1?'en':''} lokal gespeichert`);
-}
+function saveDocsLocally(){}
 
 function setStep(n){
   [1,2,3,4,5].forEach(i=>{
@@ -4221,11 +4212,8 @@ function setStep(n){
 
 function updateBelegNr(){
   const all=buildAllData();
-  const deleted=lsGet('diekjobst_deleted');
   const yr=new Date().getFullYear().toString().slice(-2);
-  // Vorhandene UND gelöschte Belegnummern berücksichtigen, damit keine Nummer wiederverwendet wird
-  const allNrs=[...all.map(r=>r.belegnr||''),...deleted];
-  const nums=allNrs.map(b=>{const m=b.match(/TZ-\d{2}-(\d+)/);return m?+m[1]:0});
+  const nums=(all||[]).map(r=>{const m=(r.belegnr||'').match(/TZ-\d{2}-(\d+)/);return m?+m[1]:0});
   const next=(Math.max(0,...nums)+1).toString().padStart(3,'0');
   const el=document.getElementById('belegPreview');if(el)el.value=`TZ-${yr}-${next}`;
   return `TZ-${yr}-${next}`;
@@ -4300,16 +4288,18 @@ function confirmDelete(){
       </button>
     </div>`;
 }
-function deleteEntry(){
+async function deleteEntry(){
   if(!editingNr)return;
-  // Remove from localStorage entries
-  const ls=lsGet('diekjobst_daten');
-  const filtered=ls.filter(x=>x.belegnr!==editingNr);
-  localStorage.setItem('diekjobst_daten',JSON.stringify(filtered));
-  // Track deleted DEMO entries so they don't reappear
-  const deleted=lsGet('diekjobst_deleted');
-  if(!deleted.includes(editingNr))deleted.push(editingNr);
-  localStorage.setItem('diekjobst_deleted',JSON.stringify(deleted));
+  const r=(_tzCache||[]).find(x=>x.belegnr===editingNr);
+  if(r?._sbDatei){
+    const paths=[];
+    if(r._sbDatei.tz)paths.push(r._sbDatei.tz.storage_path);
+    (r._sbDatei.wiegescheine||[]).forEach(w=>{if(w.storage_path)paths.push(w.storage_path);});
+    if(paths.length)await _sb.storage.from('tageszettel').remove(paths);
+    await _sb.from('tageszettel_dateien').delete().eq('belegnr',editingNr);
+  }
+  await _sb.from('tageszettel').delete().eq('belegnr',editingNr);
+  await _tzSyncFromSupabase();
   const nr=editingNr;
   allData=buildAllData();
   closeModal();
@@ -4349,13 +4339,15 @@ function openEditModal(nr){
     (orte.length?orte:['']).forEach(o=>addMeAbladeortRow({ort:o,gewicht:gew,wiegeschein:r.wiegeschein||''}));
   }
   document.getElementById('me-gew')&&(document.getElementById('me-gew').value=r.gewicht||'');
-  // Show current TZ doc status
+  // Show current TZ doc status (check session DOC_STORE + Supabase)
   _editTzFile=null;
   const existingDocs=DOC_STORE[nr];
+  const sbDateiEdit=r._sbDatei||null;
   const tzStatus=document.getElementById('me-tz-status');
   const tzBtn=document.getElementById('me-tz-btn');
-  if(existingDocs?.tz){
-    tzStatus.textContent='Tageszettel: '+existingDocs.tz.displayName;
+  if(existingDocs?.tz||sbDateiEdit?.tz){
+    const name=existingDocs?.tz?.displayName||sbDateiEdit?.tz?.dateiname||'Tageszettel';
+    tzStatus.textContent='Tageszettel: '+name;
     tzStatus.style.color='var(--green)';
     tzBtn.textContent='Tageszettel ersetzen';
     tzBtn.classList.add('attached');
@@ -4383,70 +4375,61 @@ async function handleEditTz(input){
   toast('✓ Tageszettel bereit');
 }
 function closeModal(){document.getElementById('editModal').classList.add('hidden');editingNr=null;_editTzFile=null;resetModalFoot()}
-function saveEdit(){
+async function saveEdit(){
   if(!editingNr)return;
-  const ls=lsGet('diekjobst_daten');
   const all=buildAllData();
   const idx=all.findIndex(x=>x.belegnr===editingNr);if(idx<0){closeModal();return}
   const meOrte=getAbladeorte('me-abladeort-list');
   const meGew=+meOrte.reduce((s,a)=>s+a.gewicht,0).toFixed(2);
   const updated={...all[idx],
-    datum:         v('me-datum'),
-    status:        v('me-status'),
-    fahrer:        v('me-fahrer'),
-    lader:         v('me-lader'),
-    lader2:        v('me-lader2'),
-    kennzeichen:   v('me-kennzeichen'),
-    touren:        +v('me-touren'),
-    tournr:        v('me-tournr'),
-    kmStart:       v('me-km-start')?+v('me-km-start'):null,
-    kmEnde:        v('me-km-ende')?+v('me-km-ende'):null,
-    kmGesamt:      (v('me-km-start')&&v('me-km-ende'))?(+v('me-km-ende')- +v('me-km-start')):null,
-    zeitBeginn:    v('me-zeit-beginn'),
-    zeitEnde:      v('me-zeit-ende'),
-    pause:         v('me-pause')?+v('me-pause'):null,
-    gebiet:        v('me-gebiet'),
-    tourBeginn:    v('me-tour-beginn'),
-    tourEnde:      v('me-tour-ende'),
-    besonderheiten:v('me-besonderheiten'),
-    fraktion:      v('me-fraktion'),
-    abladeorte:    meOrte.map(({_wsFile,...rest})=>rest),
-    abladeort:     meOrte.map(a=>a.ort),
-    gewicht:       meGew,
-    wiegeschein:   meOrte.map(a=>a.wiegeschein).filter(Boolean).join(', ')
+    datum:v('me-datum'),status:v('me-status'),fahrer:v('me-fahrer'),
+    lader:v('me-lader'),lader2:v('me-lader2'),kennzeichen:v('me-kennzeichen'),
+    touren:+v('me-touren'),tournr:v('me-tournr'),
+    kmStart:v('me-km-start')?+v('me-km-start'):null,
+    kmEnde:v('me-km-ende')?+v('me-km-ende'):null,
+    kmGesamt:(v('me-km-start')&&v('me-km-ende'))?(+v('me-km-ende')-+v('me-km-start')):null,
+    zeitBeginn:v('me-zeit-beginn'),zeitEnde:v('me-zeit-ende'),
+    pause:v('me-pause')?+v('me-pause'):null,gebiet:v('me-gebiet'),
+    tourBeginn:v('me-tour-beginn'),tourEnde:v('me-tour-ende'),
+    besonderheiten:v('me-besonderheiten'),fraktion:v('me-fraktion'),
+    abladeorte:meOrte.map(({_wsFile,...rest})=>rest),
+    abladeort:meOrte.map(a=>a.ort),gewicht:meGew,
+    wiegeschein:meOrte.map(a=>a.wiegeschein).filter(Boolean).join(', ')
   };
-  const lsIdx=ls.findIndex(x=>x.belegnr===editingNr);
-  if(lsIdx>=0)ls[lsIdx]=updated;
-  else ls.push(updated);
-  try{
-    localStorage.setItem('diekjobst_daten',JSON.stringify(ls));
-  }catch(e){
-    toast('⚠ Speichern fehlgeschlagen: '+e.message);return;
-  }
-  // Update DOC_STORE with newly uploaded documents
-  if(!DOC_STORE[editingNr])DOC_STORE[editingNr]={tz:null,wiegescheine:[]};
+  const payload={
+    belegnr:updated.belegnr,datum:updated.datum,fahrer:updated.fahrer,
+    lader:updated.lader||null,lader2:updated.lader2||null,kennzeichen:updated.kennzeichen||null,
+    touren:updated.touren||null,tournr:updated.tournr||null,
+    km_start:updated.kmStart??null,km_ende:updated.kmEnde??null,km_gesamt:updated.kmGesamt??null,
+    zeit_beginn:updated.zeitBeginn||null,zeit_ende:updated.zeitEnde||null,pause:updated.pause??null,
+    gebiet:updated.gebiet||null,tour_beginn:updated.tourBeginn||null,tour_ende:updated.tourEnde||null,
+    besonderheiten:updated.besonderheiten||null,fraktion:updated.fraktion||null,
+    gewicht:updated.gewicht??null,wiegeschein:updated.wiegeschein||null,
+    status:updated.status,abladeorte:updated.abladeorte
+  };
+  const{error:sbErr}=await _sb.from('tageszettel').update(payload).eq('belegnr',editingNr);
+  if(sbErr){toast('⚠ Speichern fehlgeschlagen: '+sbErr.message);return;}
+  // Upload new TZ file if attached
   if(_editTzFile){
     const ext=_editTzFile.name.split('.').pop()||'pdf';
-    DOC_STORE[editingNr].tz={..._editTzFile,displayName:`${editingNr}_Tageszettel_${updated.datum}.${ext}`};
-    updated.hasTZ=true;
+    const path=`${editingNr}/tz_${updated.datum}.${ext}`;
+    await _sb.storage.from('tageszettel').upload(path,dataUrlToBlob(_editTzFile.dataUrl),{upsert:true});
+    await _sb.from('tageszettel_dateien').delete().eq('belegnr',editingNr).eq('typ','tz');
+    await _sb.from('tageszettel_dateien').insert({belegnr:editingNr,typ:'tz',dateiname:_editTzFile.name,storage_path:path});
   }
-  // Collect WS files from edit abladeort rows
+  // Upload new WS files from edit rows
   const meRows=[...document.querySelectorAll('#me-abladeort-list .ab-row')];
-  const existingWS=DOC_STORE[editingNr].wiegescheine||[];
-  meOrte.forEach((a,i)=>{
-    const row=meRows[i];if(!row)return;
-    if(row._wsFile){
-      const ext=row._wsFile.name.split('.').pop()||'pdf';
-      const wsEntry={...row._wsFile,ort:a.ort,wsNr:a.wiegeschein,
-        displayName:`${editingNr}_${a.wiegeschein||'WS'}_${a.ort}_${updated.datum}.${ext}`};
-      const existIdx=existingWS.findIndex(w=>w.ort===a.ort);
-      if(existIdx>=0)existingWS[existIdx]=wsEntry;
-      else existingWS.push(wsEntry);
-    }
-  });
-  DOC_STORE[editingNr].wiegescheine=existingWS;
-  // Neu hochgeladene Dateien lokal speichern
-  saveDocsLocally(updated, DOC_STORE[editingNr]);
+  for(let i=0;i<meOrte.length;i++){
+    const row=meRows[i];if(!row||!row._wsFile)continue;
+    const a=meOrte[i];
+    const ext=row._wsFile.name.split('.').pop()||'pdf';
+    const safe=(a.ort||'WS').replace(/[^a-zA-Z0-9_\-]/g,'_');
+    const path=`${editingNr}/ws_${safe}_${updated.datum}.${ext}`;
+    await _sb.storage.from('tageszettel').upload(path,dataUrlToBlob(row._wsFile.dataUrl),{upsert:true});
+    await _sb.from('tageszettel_dateien').delete().eq('belegnr',editingNr).eq('abladeort',a.ort).eq('typ','ws');
+    await _sb.from('tageszettel_dateien').insert({belegnr:editingNr,typ:'ws',dateiname:row._wsFile.name,storage_path:path,abladeort:a.ort,ws_nr:a.wiegeschein||null});
+  }
+  await _tzSyncFromSupabase();
   allData=buildAllData();
   closeModal();
   renderArchiv();
@@ -4648,16 +4631,8 @@ async function handleRowWS(input){
 }
 
 /* ══ DATA HELPER ══ */
-function buildAllData(){
-  const ls=lsGet('diekjobst_daten');
-  const deleted=new Set(lsGet('diekjobst_deleted'));
-  return ls.filter(r=>!deleted.has(r.belegnr));
-}
-/* ══ UTILS ══ */
-function lsGet(key){
-  try{return JSON.parse(localStorage.getItem(key)||'[]');}
-  catch(e){console.error('localStorage parse error ['+key+']:',e);localStorage.removeItem(key);return[];}
-}
+function buildAllData(){return _tzCache||[];}
+function lsGet(){return [];}
 function v(id){return(document.getElementById(id)?.value||'').trim()}
 function set(id,val){const e=document.getElementById(id);if(e)e.textContent=val}
 function fd(s){if(!s)return'–';const[y,m,d]=s.split('-');return`${d}.${m}.${y}`}
@@ -4676,8 +4651,12 @@ function statusBadge(s){
 let _docModalNr=null,_docModalTab='tz';
 function docBadge(r){
   const docs=DOC_STORE[r.belegnr];
-  const wsCount=docs?.wiegescheine?.length||0;
-  if(!docs?.tz&&!wsCount)return'<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">–</span>';
+  const sbDatei=r._sbDatei;
+  const hasTZ=docs?.tz||sbDatei?.tz;
+  const sessionWS=docs?.wiegescheine?.length||0;
+  const sbWS=(sbDatei?.wiegescheine||[]).filter(w=>!(docs?.wiegescheine||[]).find(x=>x.ort===w.abladeort)).length;
+  const wsCount=sessionWS+sbWS;
+  if(!hasTZ&&!wsCount)return'<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">–</span>';
   const cls=wsCount?'doc-btn has-ws':'doc-btn';
   const label=wsCount?`TZ + ${wsCount} WS`:'Tageszettel';
   return`<button class="${cls}" onclick="openDocModal('${r.belegnr}')">
@@ -4688,16 +4667,24 @@ function docBadge(r){
 function openDocModal(nr){
   _docModalNr=nr;
   set('docModalNr',nr);
-  // Build tabs dynamically
   const docs=DOC_STORE[nr]||{};
+  const r=buildAllData().find(x=>x.belegnr===nr);
+  const sbDatei=r?._sbDatei||null;
+  // Merge in-session WS with Supabase WS
+  const wsItems=[...(docs.wiegescheine||[])];
+  (sbDatei?.wiegescheine||[]).forEach(w=>{
+    if(!wsItems.find(x=>x.ort===w.abladeort))
+      wsItems.push({_sbPath:w.storage_path,ort:w.abladeort,wsNr:w.ws_nr,name:w.dateiname});
+  });
+  _docModalWsItems=wsItems;
   const tabsEl=document.querySelector('.doc-modal-tabs');
   tabsEl.innerHTML=`<button class="doc-tab active" id="docTab-tz" onclick="switchDocTab('tz')">
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Tageszettel
   </button>`;
-  (docs.wiegescheine||[]).forEach((ws,i)=>{
+  wsItems.forEach((ws,i)=>{
     tabsEl.innerHTML+=`<button class="doc-tab" id="docTab-ws${i}" onclick="switchDocTab('ws${i}')">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
-      WS – ${ws.ort}${ws.wsNr?' ('+ws.wsNr+')':''}
+      WS – ${ws.ort}${(ws.wsNr||ws.wiegeschein)?` (${ws.wsNr||ws.wiegeschein})`:''}
     </button>`;
   });
   document.getElementById('docModal').classList.remove('hidden');
@@ -4709,27 +4696,41 @@ function switchDocTab(tab){
   document.querySelectorAll('.doc-tab').forEach(t=>t.classList.remove('active'));
   const activeTab=document.getElementById('docTab-'+tab);if(activeTab)activeTab.classList.add('active');
   const docs=DOC_STORE[_docModalNr]||{};
-  let file=null;
-  if(tab==='tz'){file=docs.tz;}
-  else{const idx=parseInt(tab.replace('ws',''));file=(docs.wiegescheine||[])[idx]||null;}
+  const r=buildAllData().find(x=>x.belegnr===_docModalNr);
+  const sbDatei=r?._sbDatei||null;
   const area=document.getElementById('docPreviewArea');
   const dlBtn=document.getElementById('docDownloadBtn');
   const infoEl=document.getElementById('docFileInfo');
-  if(!file){
+  let fileUrl=null,fileName=null;
+  if(tab==='tz'){
+    if(docs.tz){fileUrl=docs.tz.dataUrl;fileName=docs.tz.displayName||docs.tz.name;}
+    else if(sbDatei?.tz){
+      const{data}=_sb.storage.from('tageszettel').getPublicUrl(sbDatei.tz.storage_path);
+      fileUrl=data.publicUrl;fileName=sbDatei.tz.dateiname;
+    }
+  } else {
+    const idx=parseInt(tab.replace('ws',''));
+    const ws=_docModalWsItems[idx];
+    if(ws?.dataUrl){fileUrl=ws.dataUrl;fileName=ws.displayName||ws.name;}
+    else if(ws?._sbPath){
+      const{data}=_sb.storage.from('tageszettel').getPublicUrl(ws._sbPath);
+      fileUrl=data.publicUrl;fileName=ws.name;
+    }
+  }
+  if(!fileUrl){
     area.innerHTML=`<div class="doc-no-file">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <div>Kein Dokument hinterlegt</div>
-      <div style="font-size:11px;margin-top:4px">Dokumente sind nur in der aktuellen Sitzung verfügbar</div>
     </div>`;
     dlBtn.style.display='none';infoEl.textContent='–';return;
   }
-  const displayName=file.displayName||file.name;
-  dlBtn.style.display='';dlBtn.href=file.dataUrl;dlBtn.download=displayName;
-  infoEl.textContent=displayName;
-  if(['jpg','jpeg','png'].includes(file.type)){
-    area.innerHTML=`<img src="${file.dataUrl}" alt="${displayName}">`;
+  dlBtn.style.display='';dlBtn.href=fileUrl;dlBtn.download=fileName||'dokument';
+  infoEl.textContent=fileName||'–';
+  const lc=(fileName||'').toLowerCase();
+  if(lc.endsWith('.jpg')||lc.endsWith('.jpeg')||lc.endsWith('.png')){
+    area.innerHTML=`<img src="${fileUrl}" alt="${fileName||''}">`;
   } else {
-    area.innerHTML=`<iframe src="${file.dataUrl}" title="${displayName}"></iframe>`;
+    area.innerHTML=`<iframe src="${fileUrl}" title="${fileName||''}"></iframe>`;
   }
 }
 
@@ -8157,45 +8158,37 @@ async function _idbSet(key,val){
   }catch(e){}
 }
 
-function loadStandorte(){return _standorteCache||[];}
-function saveStandorteData(d){
-  _standorteCache=d;
-  _idbSet('standorte',d);
-  // Compact backup in localStorage (ohne Bilddaten)
-  try{
-    const compact=d.map(s=>({...s,begehungen:(s.begehungen||[]).map(b=>({id:b.id,datum:b.datum,notiz:b.notiz,draufsichten:[],schraegaufnahmen:[],gesamtuebersicht:null}))}));
-    localStorage.setItem('standorteData',JSON.stringify(compact));
-  }catch(e){}
+// ── Standorte: Supabase Cache ───────────────────────────────────
+async function _stdSyncFromSupabase(){
+  const[{data:sRows,error:e1},{data:bRows},{data:dRows}]=await Promise.all([
+    _sb.from('standorte').select('*').order('ort'),
+    _sb.from('begehungen').select('*').order('datum',{ascending:false}),
+    _sb.from('drohnen_dateien').select('*').order('monat',{ascending:false})
+  ]);
+  if(e1){console.error('std sync:',e1);return;}
+  _standorteCache=(sRows||[]).map(s=>({
+    id:s.id,
+    name:s.name||'',
+    ort:s.ort||'',
+    typ:s.typ||'umschlag',
+    adresse:s.adresse||'',
+    beschreibung:s.beschreibung||'',
+    notiz:s.notiz||'',
+    drohnen:s.drohnen||false,
+    frist:{aktiv:s.frist_aktiv||false,tag:s.frist_tag||1,beschreibung:s.frist_beschreibung||''},
+    begehungen:(bRows||[]).filter(b=>b.standort_id===s.id).map(b=>({id:b.id,datum:b.datum,notiz:b.notiz||''})),
+    drohnenDateien:(dRows||[]).filter(d=>d.standort_id===s.id),
+    dokumente:[]
+  }));
 }
 
+function loadStandorte(){return _standorteCache||[];}
+function saveStandorteData(d){_standorteCache=d;}
+
 function initStandorte(){
-  if(!_stdInitPromise)_stdInitPromise=_doInitStandorte();
+  _stdInitPromise=_stdSyncFromSupabase();
   return _stdInitPromise;
 }
-async function _doInitStandorte(){
-  const mk=()=>'std_'+Math.random().toString(36).slice(2,8);
-  const mf=(tag,beschreibung)=>({aktiv:true,tag,beschreibung});
-  // 1. IDB (primär, mit Bilddaten)
-  let data=await _idbGet('standorte');
-  // 2. localStorage fallback (Metadaten, kein Bildverlust)
-  if(!data){
-    try{const ls=localStorage.getItem('standorteData');if(ls)data=JSON.parse(ls);}catch(e){}
-  }
-  if(data&&data.length>0){
-    data=data.map(s=>({begehungen:[],dokumente:[],frist:{aktiv:false,tag:1,beschreibung:''},...s}));
-  } else {
-    data=[
-      {id:mk(),name:'Umschlags- und Lagerplatz',ort:'Tappendorf',typ:'umschlag',adresse:'',beschreibung:'Zentraler Umschlag- und Lagerplatz für angelieferte Fraktionen.',notiz:'',frist:mf(1,'Drohnenaufnahmen erstellen'),begehungen:[],dokumente:[]},
-      {id:mk(),name:'Kompost & Fraktionen',ort:'Stafstedt',typ:'kompost',adresse:'',beschreibung:'Lagerung von Kompost und weiteren Fraktionen.',notiz:'',frist:mf(1,'Drohnenaufnahmen erstellen'),begehungen:[],dokumente:[]},
-      {id:mk(),name:'Recyclinghof',ort:'Hohenwestedt',typ:'recycling',adresse:'',beschreibung:'Annahme und Sortierung verwertbarer Materialien.',notiz:'',frist:{aktiv:false,tag:1,beschreibung:''},begehungen:[],dokumente:[]},
-      {id:mk(),name:'Werkstatt',ort:'Hohenwestedt',typ:'werkstatt',adresse:'',beschreibung:'Fahrzeugwartung und -reparatur.',notiz:'',frist:{aktiv:false,tag:1,beschreibung:''},begehungen:[],dokumente:[]},
-      {id:mk(),name:'Hackschnitzel-Zwischenlager',ort:'Fremde Höfe',typ:'fremd',adresse:'',beschreibung:'Hackschnitzel, die beim Hacken auf Fremdflächen zwischengelagert wurden.',notiz:'Genaue Standorte je nach Einsatz variabel.',frist:{aktiv:false,tag:1,beschreibung:''},begehungen:[],dokumente:[]},
-    ];
-  }
-  _standorteCache=data;
-  _idbSet('standorte',data); // fire-and-forget, kein await
-}
-initStandorte();
 
 function renderStandorte(){
   const grid=document.getElementById('standorteGrid');
@@ -8273,37 +8266,38 @@ function openStdModal(id){
 }
 function closeStdModal(){document.getElementById('stdModal').classList.add('hidden');}
 function editStd(id){openStdModal(id);}
-function deleteStd(id){
+async function deleteStd(id){
   if(!confirm('Standort wirklich löschen?'))return;
-  saveStandorteData(loadStandorte().filter(s=>s.id!==id));
+  await _sb.from('standorte').delete().eq('id',id);
+  await _stdSyncFromSupabase();
   renderStandorte();
 }
-function saveStd(){
+async function saveStd(){
   const name=document.getElementById('stdName').value.trim();
   const ort=document.getElementById('stdOrt').value.trim();
   if(!name||!ort){alert('Bitte Bezeichnung und Ort ausfüllen.');return;}
-  const id=_stdEditId||('std_'+Math.random().toString(36).slice(2,8));
-  let data=loadStandorte();
-  const existing=_stdEditId?data.find(s=>s.id===_stdEditId):null;
-  const entry={
-    id,
-    name,
-    ort,
+  const payload={
+    name,ort,
     typ:document.getElementById('stdTyp').value,
     adresse:document.getElementById('stdAdresse').value.trim(),
     beschreibung:document.getElementById('stdBeschreibung').value.trim(),
     notiz:document.getElementById('stdNotiz').value.trim(),
     drohnen:document.getElementById('stdDrohnen').checked,
-    frist:{aktiv:document.getElementById('stdFristAktiv').checked,tag:parseInt(document.getElementById('stdFristTag').value)||1,beschreibung:document.getElementById('stdFristBeschreibung').value.trim()},
-    begehungen:existing?existing.begehungen||[]:[],
-    dokumente:existing?existing.dokumente||[]:[],
+    frist_aktiv:document.getElementById('stdFristAktiv').checked,
+    frist_tag:parseInt(document.getElementById('stdFristTag').value)||1,
+    frist_beschreibung:document.getElementById('stdFristBeschreibung').value.trim()
   };
-  if(_stdEditId){data=data.map(s=>s.id===_stdEditId?entry:s);}
-  else{data.push(entry);}
-  saveStandorteData(data);
+  let sbErr;
+  if(_stdEditId){
+    ({error:sbErr}=await _sb.from('standorte').update(payload).eq('id',_stdEditId));
+  }else{
+    ({error:sbErr}=await _sb.from('standorte').insert(payload));
+  }
+  if(sbErr){alert('Fehler: '+sbErr.message);return;}
+  await _stdSyncFromSupabase();
   closeStdModal();
   renderStandorte();
-  if(_stdDetailId===id)renderStdDetail();
+  if(_stdDetailId)renderStdDetail();
 }
 
 /* ══ STANDORT FRISTEN → HOME ALERTS ══ */
@@ -8522,15 +8516,6 @@ async function renderStdBegFolderSection(){
   if(!cont)return;
   const s=loadStandorte().find(x=>x.id===_stdDetailId);
   const ortName=s?.ort||'Standort';
-  const handle=await _idbGet('folder_drohnen_shared');
-  let connected=false,folderName='';
-  if(handle){
-    try{
-      let perm=await handle.queryPermission({mode:'readwrite'});
-      if(perm==='prompt')perm=await handle.requestPermission({mode:'readwrite'});
-      if(perm==='granted'){connected=true;folderName=handle.name;}
-    }catch(e){}
-  }
   const f=s?.frist||{};
   const today=new Date();today.setHours(0,0,0,0);
   const thisMonth=today.toISOString().slice(0,7);
@@ -8545,78 +8530,117 @@ async function renderStdBegFolderSection(){
     const border=overdue?'#fca5a5':'#fde68a';
     const color=overdue?'#dc2626':'#d97706';
     fristBanner=`<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:${bg};border:1px solid ${border};border-radius:10px;margin-bottom:20px">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:${color}">${f.beschreibung||'Drohnenaufnahmen'} — ${statusText}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">Jeden ${f.tag||1}. des Monats</div>
       </div>
       <button onclick="markDrohnenFristErledigt()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--white);border:1px solid ${border};border-radius:7px;font-size:12px;font-weight:600;color:${color};cursor:pointer;font-family:var(--sans);flex-shrink:0">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         Als erledigt markieren
       </button>
     </div>`;
   }
-  const infoBox=`
-    <div style="padding:14px 16px;background:#f0f6ff;border-left:3px solid var(--blue,#2563eb);border-radius:0 8px 8px 0;margin-bottom:20px;font-size:12.5px;color:var(--navy);line-height:1.7">
-      <strong>Was sind Drohnenaufnahmen?</strong><br>
-      Periodische Luftaufnahmen zur Übersicht des Standorts — Draufsichten, Schrägansichten und eine Gesamtübersicht.<br>
-      <strong>Wozu?</strong> Nachweis des Flächenzustands über die Zeit, intern und gegenüber Behörden.<br>
-      <strong>Wo werden die Daten gespeichert?</strong> Aktuell direkt in einem lokalen oder Netzwerkordner — Tappendorf und Stafstedt als getrennte Unterordner. Ziel ist die spätere Anbindung an den Server.
-    </div>`;
-  if(connected){
-    cont.innerHTML=fristBanner+infoBox+`
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--green-l);border:1px solid #bbf7d0;border-radius:10px;margin-bottom:20px">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${folderName}</div>
-          <div style="font-size:11px;color:var(--green);margin-top:2px">Ordner verbunden · Aufnahmen werden hier gespeichert</div>
-        </div>
-        <button class="btn btn-ghost" style="font-size:11px;flex-shrink:0" onclick="disconnectStdFolder()">Trennen</button>
-        <button class="btn btn-primary" style="font-size:12px;flex-shrink:0" onclick="openStdBegModal()">+ Neue Aufnahme</button>
+
+  // Monatsübersicht aus Supabase
+  const dateien=s?.drohnenDateien||[];
+  const byMonth={};
+  dateien.forEach(d=>{if(!byMonth[d.monat])byMonth[d.monat]=[];byMonth[d.monat].push(d);});
+  const months=Object.keys(byMonth).sort((a,b)=>b.localeCompare(a));
+  const monthsHtml=months.length?months.map(m=>{
+    const count=byMonth[m].length;
+    const [yr,mo]=m.split('-');
+    const label=new Date(+yr,+mo-1,1).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--white);border:1px solid var(--line);border-radius:9px;margin-bottom:8px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--navy)">${label}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${count} Bild${count!==1?'er':''}</div>
       </div>
-      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">Dokumentierte Monate — ${ortName}</div>
-      <div id="stdBegMonthsOverview" style="font-size:12px;color:var(--muted)">Lade …</div>`;
-    loadStdBegMonths(handle,ortName);
-  } else {
-    cont.innerHTML=fristBanner+infoBox+`
-      <div style="text-align:center;padding:44px 32px;background:var(--bg);border-radius:10px;border:1.5px dashed var(--line)">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" style="margin-bottom:12px;display:block;margin-left:auto;margin-right:auto"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px">Kein Ordner verknüpft</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:20px;max-width:360px;margin-left:auto;margin-right:auto;line-height:1.6">
-          Einmalig einen Ordner auf deinem Computer oder Netzlaufwerk wählen.<br>
-          Alle Aufnahmen beider Standorte landen automatisch dort.
-        </div>
-        <button class="btn btn-primary btn-lg" onclick="connectStdFolder()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          Ordner verknüpfen
-        </button>
-        ${!window.showDirectoryPicker?'<div style="font-size:11px;color:#dc2626;margin-top:12px">⚠ Dein Browser unterstützt keinen Ordnerzugriff. Bitte Chrome oder Edge nutzen.</div>':''}
-      </div>`;
+      <button onclick="openDrohnenGalerie('${m}','${s.id}')" title="Bilder anzeigen" style="background:none;border:1.5px solid var(--line);border-radius:7px;padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy);font-family:var(--sans)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        Öffnen
+      </button>
+    </div>`;
+  }).join(''):`<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Noch keine Aufnahmen hochgeladen.</div>`;
+
+  cont.innerHTML=fristBanner+`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">Drohnenaufnahmen — ${ortName}</div>
+      <label style="display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--navy);color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--sans)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Bilder hochladen
+        <input type="file" accept="image/*" multiple style="display:none" onchange="uploadDrohnenBilder(this.files,'${s?.id}')">
+      </label>
+    </div>
+    <div id="drohnenMonthsList">${monthsHtml}</div>`;
+}
+
+async function uploadDrohnenBilder(files,standortId){
+  if(!files||!files.length||!standortId)return;
+  const monat=new Date().toISOString().slice(0,7);
+  const toastEl=document.createElement('div');
+  toastEl.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999';
+  toastEl.textContent='Bilder werden hochgeladen…';
+  document.body.appendChild(toastEl);
+  let ok=0;
+  for(const file of files){
+    const path=`${standortId}/${monat}/${Date.now()}_${file.name}`;
+    const{error:upErr}=await _sb.storage.from('drohnen').upload(path,file,{upsert:true});
+    if(upErr){console.error(upErr);continue;}
+    await _sb.from('drohnen_dateien').insert({standort_id:standortId,monat,dateiname:file.name,storage_path:path});
+    ok++;
   }
-}
-
-async function connectStdFolder(){
-  if(!window.showDirectoryPicker){alert('Bitte Chrome oder Edge nutzen.');return;}
-  try{
-    const handle=await window.showDirectoryPicker({mode:'readwrite'});
-    await _idbSet('folder_drohnen_shared',handle);
-    renderStdBegFolderSection();
-  }catch(e){if(e.name!=='AbortError')alert('Fehler: '+e.message);}
-}
-
-async function disconnectStdFolder(){
-  await _idbSet('folder_drohnen_shared',null);
+  toastEl.textContent=`${ok} Bild${ok!==1?'er':''} gespeichert.`;
+  setTimeout(()=>toastEl.remove(),2500);
+  await _stdSyncFromSupabase();
   renderStdBegFolderSection();
 }
 
-function markDrohnenFristErledigt(){
-  const all=loadStandorte();
-  const s=all.find(x=>x.id===_stdDetailId);
-  if(!s)return;
+async function openDrohnenGalerie(monat,standortId){
+  const s=loadStandorte().find(x=>x.id===standortId);
+  const dateien=(s?.drohnenDateien||[]).filter(d=>d.monat===monat);
+  const[yr,mo]=monat.split('-');
+  const label=new Date(+yr,+mo-1,1).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+  const urls=await Promise.all(dateien.map(async d=>{
+    const{data}=_sb.storage.from('drohnen').getPublicUrl(d.storage_path);
+    return{url:data?.publicUrl,name:d.dateiname,id:d.id,path:d.storage_path};
+  }));
+  let modal=document.getElementById('drohnenGalerieModal');
+  if(!modal){modal=document.createElement('div');modal.id='drohnenGalerieModal';document.body.appendChild(modal);}
+  modal.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div style="background:#fff;border-radius:14px;width:100%;max-width:780px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)">
+      <div style="font-size:15px;font-weight:700;color:var(--navy)">${label} — ${s?.ort||''}</div>
+      <button onclick="document.getElementById('drohnenGalerieModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--muted);line-height:1">✕</button>
+    </div>
+    <div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+      ${urls.map(u=>`<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line)">
+        <img src="${u.url}" style="width:100%;height:160px;object-fit:cover;display:block;cursor:pointer" onclick="window.open('${u.url}','_blank')">
+        <div style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">${u.name}</div>
+          <button onclick="deleteDrohnenBild('${u.id}','${u.path}','${monat}','${standortId}')" title="Löschen" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:13px;padding:2px 4px">✕</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+async function deleteDrohnenBild(fileId,path,monat,standortId){
+  if(!confirm('Bild löschen?'))return;
+  await Promise.all([
+    _sb.storage.from('drohnen').remove([path]),
+    _sb.from('drohnen_dateien').delete().eq('id',fileId)
+  ]);
+  await _stdSyncFromSupabase();
+  document.getElementById('drohnenGalerieModal').style.display='none';
+  openDrohnenGalerie(monat,standortId);
+}
+
+async function markDrohnenFristErledigt(){
   const heute=new Date().toISOString().slice(0,10);
-  s.begehungen=s.begehungen||[];
-  s.begehungen.push({id:'frist_'+Date.now(),datum:heute,notiz:'Frist manuell als erledigt markiert'});
-  saveStandorteData(all);
+  const{error}=await _sb.from('begehungen').insert({standort_id:_stdDetailId,datum:heute,notiz:'Frist manuell als erledigt markiert',frist_erledigt:true});
+  if(error){console.error(error);return;}
+  await _stdSyncFromSupabase();
   renderStdDetail();
   renderStdBegFolderSection();
 }
