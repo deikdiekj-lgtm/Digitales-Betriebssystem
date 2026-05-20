@@ -1444,6 +1444,7 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
           <th onclick="sortArchBy('abladeort')" data-col="abladeort">Abladeort <span class="ar">↕</span></th>
           <th onclick="sortArchBy('zeitBeginn')" data-col="zeitBeginn">Arb.-Zeit <span class="ar">↕</span></th>
           <th onclick="sortArchBy('status')" data-col="status">Bearbeitungsstand <span class="ar">↕</span></th>
+          <th style="text-align:center">Dokumente</th>
           <th style="text-align:center">Aktion</th>
         </tr></thead>
         <tbody id="archTbody"></tbody>
@@ -4238,7 +4239,7 @@ function renderArchiv(){
   set('aTotal',archData.length);
   set('aOffen',allP);
   const tb=document.getElementById('archTbody');
-  if(!sl.length){tb.innerHTML=`<tr><td colspan="11"><div class="empty">Keine Einträge.</div></td></tr>`;return}
+  if(!sl.length){tb.innerHTML=`<tr><td colspan="12"><div class="empty">Keine Einträge.</div></td></tr>`;return}
   tb.innerHTML=sl.map(r=>`<tr>
     <td><span class="t-link">${r.belegnr}</span></td>
     <td class="mono">${fd(r.datum)}</td>
@@ -4250,6 +4251,7 @@ function renderArchiv(){
     <td>${ortBadges(r.abladeort)}</td>
     <td class="mono" style="font-size:11px">${r.zeitBeginn&&r.zeitEnde?r.zeitBeginn+'–'+r.zeitEnde:r.zeitBeginn||'–'}</td>
     <td>${statusBadge(r.status)}</td>
+    <td style="text-align:center">${docBadge(r)}</td>
     <td style="text-align:center"><button class="btn-edit" onclick="openEditModal('${r.belegnr}')">Bearbeiten</button></td>
   </tr>`).join('');
   renderPag('archPagInfo','archPbtns',aPg,pages,total,(i)=>{aPg=i;renderArchiv()});
