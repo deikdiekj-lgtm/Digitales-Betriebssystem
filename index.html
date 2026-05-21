@@ -3415,6 +3415,11 @@ const DOC_STORE={};  // belegnr -> {tz:{dataUrl,name,type}, ws:{dataUrl,name,typ
 let _tzFileData=null, _wsFileData=null;  // pending during scan
 let _rootDirHandle=null; // kept for legacy compat, unused
 let _tzCache=null, _tzInitPromise=null;
+let _repCache=null, _repInitPromise=null;
+let _pruefCache=null, _pruefInitPromise=null;
+let _tdCache=null, _tdInitPromise=null;
+let _schadenCache=null, _schadenInitPromise=null;
+let _einstellungenCache={}, _einstellungenInitPromise=null;
 let _docModalWsItems=[];
 
 function readFileAsDataURL(file){
@@ -3502,6 +3507,48 @@ function initTageszettel(){
   _tzInitPromise=_tzSyncFromSupabase();
   return _tzInitPromise;
 }
+
+async function _repSyncFromSupabase(){
+  const{data,error}=await _sb.from('reparaturen').select('*').order('datum',{ascending:false});
+  if(error){console.error('REP sync:',error);_repCache=_repCache||[];return;}
+  _repCache=(data||[]).map(r=>({id:r.id,datum:r.datum,fzId:r.fz_id,kennzeichen:r.kennzeichen,kategorie:r.kategorie,werkstatt:r.werkstatt,beschreibung:r.beschreibung,kosten:r.kosten,rechnungsnr:r.rechnungsnr,notiz:r.notiz,_sbStoragePath:r.storage_path||null}));
+}
+function initReparaturen(){_repInitPromise=_repSyncFromSupabase();return _repInitPromise;}
+
+async function _pruefSyncFromSupabase(){
+  const{data,error}=await _sb.from('pruef_status').select('*');
+  if(error){console.error('PRUEF sync:',error);_pruefCache=_pruefCache||{};return;}
+  const obj={};
+  for(const r of(data||[])){obj[r.key]={status:r.status,terminDatum:r.termin_datum||'',notiz:r.notiz||'',erledigtDatum:r.erledigt_datum||'',faelligDatum:r.faellig_datum||'',_sbCertPath:r.cert_storage_path||null};}
+  _pruefCache=obj;
+}
+function initPruefStatus(){_pruefInitPromise=_pruefSyncFromSupabase();return _pruefInitPromise;}
+
+async function _tdSyncFromSupabase(){
+  const{data,error}=await _sb.from('td_tank_eintraege').select('*').order('datum',{ascending:false});
+  if(error){console.error('TD sync:',error);_tdCache=_tdCache||[];return;}
+  _tdCache=(data||[]).map(r=>({_sbId:r.id,datum:r.datum,kraftstoff:r.kraftstoff,kennzeichen:r.kennzeichen,liter:r.liter,totalanzeige:r.totalanzeige,notiz:r.notiz}));
+}
+function initTdEintraege(){_tdInitPromise=_tdSyncFromSupabase();return _tdInitPromise;}
+
+async function _schadenSyncFromSupabase(){
+  const{data,error}=await _sb.from('schaeden').select('*').order('datum',{ascending:false});
+  if(error){console.error('Schaden sync:',error);_schadenCache=_schadenCache||[];return;}
+  _schadenCache=(data||[]).map(r=>({id:r.id,typ:r.typ,datum:r.datum,fahrzeug:r.fahrzeug||'',fahrer:r.fahrer||'',ort:r.ort||'',beschreibung:r.beschreibung,massnahmen:r.massnahmen||'',personenschaden:r.personenschaden,polizei:r.polizei,disposition:r.disposition,status:r.status,storage_path:r.storage_path||null}));
+}
+function initSchaeden(){_schadenInitPromise=_schadenSyncFromSupabase();return _schadenInitPromise;}
+
+async function _einstellungenSyncFromSupabase(){
+  const{data,error}=await _sb.from('einstellungen').select('*');
+  if(error){console.error('Einstellungen sync:',error);return;}
+  for(const r of(data||[])){try{_einstellungenCache[r.key]=r.value;}catch(e){}}
+}
+function initEinstellungen(){_einstellungenInitPromise=_einstellungenSyncFromSupabase();return _einstellungenInitPromise;}
+async function _saveEinstellung(key,value){
+  await _sb.from('einstellungen').upsert({key,value,updated_at:new Date().toISOString()},{onConflict:'key'});
+  _einstellungenCache[key]=value;
+}
+
 async function _uploadTzDateien(belegnr,datum,rawEntry){
   if(_tzFileData){
     const ext=(_tzFileData.name||'').split('.').pop()||'pdf';
@@ -3536,7 +3583,9 @@ let _editTzFile=null; // TZ file uploaded in edit modal
 
 /* ══ INIT ══ */
 async function init(){
-  await initTageszettel();
+  await Promise.all([initTageszettel(),initEinstellungen()]);
+  // legacy localStorage cleanup (einmalig)
+  ['pruefAmpelCfg','tankKontrollSettings'].forEach(k=>localStorage.removeItem(k));
   allData=buildAllData();
   refreshDrops();
   document.getElementById('fVon').value='';
@@ -5085,18 +5134,18 @@ function showAwTab(tab){
 /* ══ FUHRPARK NAVIGATION ══ */
 let fpCurrentView='dashboard', fpCurrentFilter='alle';
 
-function showFpView(v){
+async function showFpView(v){
   fpCurrentView=v;
   document.querySelectorAll('.fp-snav-btn').forEach(b=>b.classList.toggle('active',b.dataset.fpv===v));
   document.querySelectorAll('.fp-view').forEach(x=>x.classList.remove('active'));
   document.getElementById('fp-view-'+v).classList.add('active');
   if(v==='dashboard'){allData=buildAllData();renderFpDashboard();}
   else if(v==='betriebsmittel'){allData=buildAllData();renderFahrzeuge();}
-  else if(v==='tankdaten'){renderTankProtokoll();}
-  else if(v==='pruefungen'){renderPruefView();}
-  else if(v==='reparatur'){renderRepairView();}
+  else if(v==='tankdaten'){if(!_tdCache)await initTdEintraege();renderTankProtokoll();}
+  else if(v==='pruefungen'){if(!_pruefCache)await initPruefStatus();renderPruefView();}
+  else if(v==='reparatur'){if(!_repCache)await initReparaturen();renderRepairView();}
   else if(v==='jahresplan'){renderJahresplan();}
-  else if(v==='schadensmeldung'){renderSchadensmeldung();}
+  else if(v==='schadensmeldung'){if(!_schadenCache)await initSchaeden();renderSchadensmeldung();}
 }
 
 function setFpFilter(f){
@@ -5264,17 +5313,15 @@ function fzDaysDiff(s){
 }
 function getAmpelCfg(type){
   const def=_AMPEL_DEFAULTS[type]||{gelb:60,rot:0,intervall:12};
-  try{
-    const c=JSON.parse(localStorage.getItem('pruefAmpelCfg')||'null');
-    if(c&&type&&c[type])return{gelb:c[type].gelb??def.gelb,rot:c[type].rot??def.rot,intervall:c[type].intervall??def.intervall};
-  }catch(e){}
+  const c=_einstellungenCache['pruefAmpelCfg']||null;
+  if(c&&type&&c[type])return{gelb:c[type].gelb??def.gelb,rot:c[type].rot??def.rot,intervall:c[type].intervall??def.intervall};
   return def;
 }
 function fzAmpelCls(s){
   if(!s)return'leer';
   if(s.length===7){
     // Daten vor dem konfigurierten Erfassungsstart werden nicht als überfällig angezeigt
-    try{const c=JSON.parse(localStorage.getItem('tankKontrollSettings')||'{}');if(s<(c.startMonat||'2026-06'))return'leer';}catch(e){}
+    {const c=loadKontrollSettings();if(s<(c.startMonat||'2026-06'))return'leer';}
     const[yr,mo]=s.split('-').map(Number);
     const today=new Date();today.setHours(0,0,0,0);
     const mStart=new Date(yr,mo-1,1);
@@ -5304,14 +5351,14 @@ function toggleAmpelSettings(){
     });
   }
 }
-function saveAmpelCfg(){
+async function saveAmpelCfg(){
   const cfg={};
   for(const t of _AMPEL_TYPES){
     const intervall=parseInt(document.getElementById('ampel-'+t+'-intervall')?.value)||_AMPEL_DEFAULTS[t].intervall;
     if(intervall<1){toast(t+': Intervall muss mindestens 1 Monat sein.');return;}
     cfg[t]={intervall};
   }
-  localStorage.setItem('pruefAmpelCfg',JSON.stringify(cfg));
+  await _saveEinstellung('pruefAmpelCfg',cfg);
   toast('Ampel-Bedingungen gespeichert.');
   renderPruefView();
 }
@@ -6870,9 +6917,10 @@ async function saveMaschinenListe(){
 }
 
 /* ══ TD TANK ══ */
-function loadTdEintraege(){try{return JSON.parse(localStorage.getItem('tdTankEintraege')||'[]');}catch(e){return[];}}
-function saveTdEintraege(d){localStorage.setItem('tdTankEintraege',JSON.stringify(d));}
-function openTdTankModal(){
+function loadTdEintraege(){return _tdCache||[];}
+function saveTdEintraege(d){}
+async function openTdTankModal(){
+  if(!_tdCache)await initTdEintraege();
   document.getElementById('td-datum').value=new Date().toISOString().slice(0,10);
   document.getElementById('td-kraftstoff').value='diesel';
   document.getElementById('td-kennzeichen').value='';
@@ -6906,21 +6954,23 @@ function renderTdTankHist(){
         <td style="padding:5px 7px;font-family:var(--mono);font-size:11px">${e.kennzeichen}</td>
         <td style="padding:5px 7px;font-family:var(--mono);font-size:11px;text-align:right">${e.liter!=null?e.liter.toLocaleString('de-DE')+' L':'–'}</td>
         <td style="padding:5px 7px;font-family:var(--mono);font-size:11px;text-align:right">${e.totalanzeige!=null?e.totalanzeige.toLocaleString('de-DE'):'–'}</td>
-        <td style="padding:5px 4px;text-align:center"><button onclick="deleteTdEntry(${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:3px;line-height:1" onmouseover="this.style.color='#c62828'" onmouseout="this.style.color='var(--muted)'">✕</button></td>
+        <td style="padding:5px 4px;text-align:center"><button onclick="deleteTdEntry('${e._sbId}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:3px;line-height:1" onmouseover="this.style.color='#c62828'" onmouseout="this.style.color='var(--muted)'">✕</button></td>
       </tr>`).join('')}
     </tbody></table>`;
 }
-function saveTdTankEntry(){
+async function saveTdTankEntry(){
   const datum=document.getElementById('td-datum').value;
   const kz=document.getElementById('td-kennzeichen').value.trim();
   const liter=+document.getElementById('td-liter').value||null;
   if(!datum||!kz||!liter){alert('Bitte Datum, Kennzeichen/Maschine und Liter ausf\xfcllen.');return;}
-  saveTdEintraege([...loadTdEintraege(),{
+  const{error}=await _sb.from('td_tank_eintraege').insert({
     datum,kraftstoff:document.getElementById('td-kraftstoff').value,
     kennzeichen:kz,liter,
     totalanzeige:+document.getElementById('td-totalanzeige').value||null,
     notiz:document.getElementById('td-notiz').value.trim()||null
-  }]);
+  });
+  if(error){toast('Fehler: '+error.message);return;}
+  await _tdSyncFromSupabase();
   document.getElementById('td-kennzeichen').value='';
   document.getElementById('td-liter').value='';
   document.getElementById('td-totalanzeige').value='';
@@ -6928,25 +6978,25 @@ function saveTdTankEntry(){
   renderTdTankHist();
   toast('TD-Eintrag gespeichert');
 }
-function deleteTdEntry(dispIdx){
+async function deleteTdEntry(sbId){
   if(!confirm('Eintrag l\xf6schen?'))return;
-  const all=loadTdEintraege().sort((a,b)=>b.datum>a.datum?1:-1);
-  const toDelete=all[dispIdx];
-  saveTdEintraege(loadTdEintraege().filter(e=>!(e.datum===toDelete.datum&&e.kennzeichen===toDelete.kennzeichen&&e.liter===toDelete.liter&&e.kraftstoff===toDelete.kraftstoff)));
+  const{error}=await _sb.from('td_tank_eintraege').delete().eq('id',sbId);
+  if(error){toast('Fehler: '+error.message);return;}
+  await _tdSyncFromSupabase();
   renderTdTankHist();
 }
 
 /* ══ KONTROLL-EINSTELLUNGEN ══ */
 const _CTRL_DEF={listenCheck:true,listenFrist:3,startMonat:'2026-06'};
-function loadKontrollSettings(){try{return{..._CTRL_DEF,...JSON.parse(localStorage.getItem('tankKontrollSettings')||'{}')};}catch(e){return{..._CTRL_DEF};}}
-function saveKontrollSettings(){
+function loadKontrollSettings(){return{..._CTRL_DEF,...(_einstellungenCache['tankKontrollSettings']||{})};}
+async function saveKontrollSettings(){
   const g=id=>document.getElementById(id);
   const s={
     listenCheck:g('ctrl-listen-check')?.checked??true,
     listenFrist:+g('ctrl-listen-frist')?.value||3,
     startMonat:g('ctrl-start-monat')?.value||'2026-06'
   };
-  localStorage.setItem('tankKontrollSettings',JSON.stringify(s));
+  await _saveEinstellung('tankKontrollSettings',s);
   toast('Einstellungen gespeichert');
   renderKontrollAlerts();
 }
@@ -7024,8 +7074,8 @@ let _psmCurrentStatus='offen';
 let _psmZertHasExisting=false;
 let _psmZertRemoved=false;
 
-function loadPruefStatus(){try{return JSON.parse(localStorage.getItem('pruefStatus')||'{}');}catch(e){return{};}}
-function savePruefStatusData(d){localStorage.setItem('pruefStatus',JSON.stringify(d));}
+function loadPruefStatus(){return _pruefCache||{};}
+function savePruefStatusData(d){}
 
 const _PSM_CFG={
   offen:   {label:'Offen',                 bg:'#f1f5f9',border:'#cbd5e1',col:'#64748b',dot:'#94a3b8'},
@@ -7045,8 +7095,8 @@ function pruefStatusBadge(st,terminDatum){
 
 async function openPruefStatus(fzId,pruefKey,label,kz,fälligDatum){
   const key=`${fzId}_${pruefKey}`;
-  const all=loadPruefStatus();
-  const cur=all[key]||{status:'offen',terminDatum:'',notiz:''};
+  if(!_pruefCache)await initPruefStatus();
+  const cur=(_pruefCache||{})[key]||{status:'offen',terminDatum:'',notiz:''};
   document.getElementById('psm-key').value=key;
   document.getElementById('psm-title').textContent=`${label} — ${kz}`;
   document.getElementById('psm-sub').textContent=fälligDatum?`Fällig: ${new Date(fälligDatum+'T00:00:00').toLocaleDateString('de-DE')}`:'Kein Datum hinterlegt';
@@ -7056,12 +7106,11 @@ async function openPruefStatus(fzId,pruefKey,label,kz,fälligDatum){
   document.getElementById('psm-zert-file').value='';
   _psmCurrentStatus=cur.status||'offen';
   _psmZertRemoved=false;
-  const existing=await pruefDBGet(key);
-  _psmZertHasExisting=!!existing;
+  _psmZertHasExisting=!!cur._sbCertPath;
   const existEl=document.getElementById('psm-zert-existing');
-  if(existing){
+  if(cur._sbCertPath){
     existEl.style.display='block';
-    document.getElementById('psm-zert-name').textContent=existing.name||'Zertifikat';
+    document.getElementById('psm-zert-name').textContent=cur._sbCertPath.split('/').pop();
   } else {
     existEl.style.display='none';
   }
@@ -7072,7 +7121,10 @@ function closePruefStatus(){document.getElementById('pruefStatusModal').classLis
 
 function pruefZertOeffnen(){
   const key=document.getElementById('psm-key').value;
-  pruefDBGet(key).then(entry=>{if(!entry)return;window.open(URL.createObjectURL(entry.blob),'_blank');});
+  const cur=(_pruefCache||{})[key];
+  if(!cur?._sbCertPath){toast('Kein Zertifikat hinterlegt.');return;}
+  const{data}=_sb.storage.from('Fahrzeuge').getPublicUrl(cur._sbCertPath);
+  window.open(data.publicUrl,'_blank');
 }
 function pruefZertEntfernen(){
   _psmZertHasExisting=false;
@@ -7104,19 +7156,29 @@ async function savePruefStatus(){
     const hasCert=(!_psmZertRemoved&&_psmZertHasExisting)||!!file;
     if(!hasCert){toast('Bitte Zertifikat hochladen, um „Erledigt" zu setzen.');return;}
   }
-  if(_psmCurrentStatus==='erledigt'&&file) await pruefDBSave(key,file);
-  if(_psmZertRemoved) await pruefDBDelete(key);
-  const all=loadPruefStatus();
-  const prev=all[key]||{};
+  const prev=(_pruefCache||{})[key]||{};
   const today=new Date().toISOString().split('T')[0];
-  all[key]={
-    status:_psmCurrentStatus,
-    terminDatum:document.getElementById('psm-termin-datum').value||'',
+  let certPath=prev._sbCertPath||null;
+  if(_psmCurrentStatus==='erledigt'&&file){
+    const ext=(file.name||'').split('.').pop()||'pdf';
+    certPath=`pruef/${key}/zert_${today}.${ext}`;
+    await _sb.storage.from('Fahrzeuge').upload(certPath,file,{upsert:true});
+  }
+  if(_psmZertRemoved&&certPath){
+    await _sb.storage.from('Fahrzeuge').remove([certPath]);
+    certPath=null;
+  }
+  const row={
+    key,status:_psmCurrentStatus,
+    termin_datum:document.getElementById('psm-termin-datum').value||null,
     notiz:document.getElementById('psm-notiz').value.trim(),
-    erledigtDatum:_psmCurrentStatus==='erledigt'?(prev.erledigtDatum||today):'',
-    faelligDatum:_psmCurrentStatus==='erledigt'?(prev.faelligDatum||document.getElementById('psm-faellig-datum').value||''):''
+    erledigt_datum:_psmCurrentStatus==='erledigt'?(prev.erledigtDatum||today):null,
+    faellig_datum:_psmCurrentStatus==='erledigt'?(prev.faelligDatum||document.getElementById('psm-faellig-datum').value||null):null,
+    cert_storage_path:certPath
   };
-  savePruefStatusData(all);
+  const{error}=await _sb.from('pruef_status').upsert(row,{onConflict:'key'});
+  if(error){toast('Fehler: '+error.message);return;}
+  await _pruefSyncFromSupabase();
   closePruefStatus();
   toast('Status gespeichert.');
   if(typeof _pruefTab!=='undefined'&&_pruefTab==='historie') renderPruefHistorie(); else renderPruefView();
@@ -7404,8 +7466,8 @@ function renderPruefView(){
 /* ══ REPARATURHISTORIE ══ */
 const _REP_KAT_COLORS={Motor:'#3b82f6',Getriebe:'#8b5cf6',Bremsen:'#ef4444',Hydraulik:'#f59e0b',Elektrik:'#f97316',Karosserie:'#06b6d4',Reifen:'#10b981',Sonstiges:'#6b7280'};
 
-function loadRepairs(){try{return JSON.parse(localStorage.getItem('repairEintraege')||'[]');}catch(e){return[];}}
-function saveRepairs(d){localStorage.setItem('repairEintraege',JSON.stringify(d));}
+function loadRepairs(){return _repCache||[];}
+function saveRepairs(d){}
 
 /* ── IndexedDB für Reparatur-Anhänge ── */
 function _repDB(){
@@ -7482,14 +7544,14 @@ function repRemoveFile(e){
   document.getElementById('rep-file-label').textContent='Klicken zum Hochladen (PDF oder Bild)';
   document.getElementById('rep-file-input').value='';
 }
-async function repOpenExistingFile(e){
+function repOpenExistingFile(e){
   e.stopPropagation();
   const editId=document.getElementById('repairEditId').value;
   if(!editId)return;
-  const entry=await repDBGet(editId);
-  if(!entry)return;
-  const url=URL.createObjectURL(entry.blob);
-  window.open(url,'_blank');
+  const entry=_repCache?.find(r=>r.id===editId);
+  if(!entry?._sbStoragePath)return;
+  const{data}=_sb.storage.from('Reperaturen').getPublicUrl(entry._sbStoragePath);
+  window.open(data.publicUrl,'_blank');
 }
 
 async function openRepairModal(id){
@@ -7518,9 +7580,9 @@ async function openRepairModal(id){
     document.getElementById('rep-rechnungsnr').value=r.rechnungsnr||'';
     document.getElementById('rep-notiz').value=r.notiz||'';
     /* vorhandenen Anhang anzeigen */
-    const existing=await repDBGet(id);
-    if(existing){
-      document.getElementById('rep-file-existing-name').textContent=existing.name;
+    const existing=_repCache?.find(r=>r.id===id);
+    if(existing?._sbStoragePath){
+      document.getElementById('rep-file-existing-name').textContent=existing._sbStoragePath.split('/').pop();
       document.getElementById('rep-file-existing').style.display='block';
       document.getElementById('rep-file-label').textContent='Neue Datei auswählen (ersetzt vorhandene)';
     }
@@ -7548,27 +7610,25 @@ async function saveRepairEntry(){
   const beschr=g('rep-beschreibung').value.trim();
   if(!datum||!fzId||!kat||!beschr){toast('Bitte Datum, Fahrzeug, Kategorie und Beschreibung ausfüllen.');return;}
   const fz=loadFahrzeuge().find(f=>f.id===fzId);
-  const repairs=loadRepairs();
   const editId=g('repairEditId').value;
-  const entry={
-    id:editId||('r'+Date.now()),
-    datum,fzId,kennzeichen:fz?.kennzeichen||'',
-    kategorie:kat,
-    werkstatt:g('rep-werkstatt').value.trim(),
-    beschreibung:beschr,
-    kosten:g('rep-kosten').value!==''?parseFloat(g('rep-kosten').value):null,
-    rechnungsnr:g('rep-rechnungsnr').value.trim(),
-    notiz:g('rep-notiz').value.trim()
-  };
-  if(editId){const i=repairs.findIndex(x=>x.id===editId);if(i>=0)repairs[i]=entry;else repairs.push(entry);}
-  else repairs.push(entry);
-  saveRepairs(repairs);
-  /* Datei in IndexedDB */
+  const id=editId||('r'+Date.now());
+  let storagePath=editId?(_repCache?.find(r=>r.id===editId)?._sbStoragePath||null):null;
   if(_repPendingFile){
-    await repDBSave(entry.id,_repPendingFile);
-  }else if(_repDeleteFile && editId){
-    await repDBDelete(editId);
+    const ext=(_repPendingFile.name||'').split('.').pop()||'pdf';
+    storagePath=`${id}/anhang_${datum}.${ext}`;
+    await _sb.storage.from('Reperaturen').upload(storagePath,_repPendingFile,{upsert:true});
+  }else if(_repDeleteFile&&storagePath){
+    await _sb.storage.from('Reperaturen').remove([storagePath]);
+    storagePath=null;
   }
+  const sbRow={id,datum,fz_id:fzId,kennzeichen:fz?.kennzeichen||'',
+    kategorie:kat,werkstatt:g('rep-werkstatt').value.trim(),beschreibung:beschr,
+    kosten:g('rep-kosten').value!==''?parseFloat(g('rep-kosten').value):null,
+    rechnungsnr:g('rep-rechnungsnr').value.trim(),notiz:g('rep-notiz').value.trim(),
+    storage_path:storagePath};
+  const{error}=await _sb.from('reparaturen').upsert(sbRow);
+  if(error){toast('Fehler beim Speichern: '+error.message);return;}
+  await _repSyncFromSupabase();
   closeRepairModal();
   toast('Reparatur gespeichert.');
   if(_repTab==='eintraege') renderRepEintraege(); else renderRepairView();
@@ -7576,8 +7636,11 @@ async function saveRepairEntry(){
 
 async function deleteRepairEntry(id){
   if(!confirm('Eintrag löschen?'))return;
-  saveRepairs(loadRepairs().filter(r=>r.id!==id));
-  await repDBDelete(id);
+  const entry=_repCache?.find(r=>r.id===id);
+  if(entry?._sbStoragePath)await _sb.storage.from('Reperaturen').remove([entry._sbStoragePath]);
+  const{error}=await _sb.from('reparaturen').delete().eq('id',id);
+  if(error){toast('Fehler beim Löschen: '+error.message);return;}
+  await _repSyncFromSupabase();
   if(_repTab==='eintraege') renderRepEintraege(); else renderRepairView();
 }
 
@@ -7648,7 +7711,7 @@ async function renderRepEintraege(){
   if(!filtered.length){tbody.innerHTML='';if(empty)empty.style.display='block';return;}
   if(empty)empty.style.display='none';
   const katBadge=k=>{const c=_REP_KAT_COLORS[k]||'#6b7280';return`<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:${c}22;color:${c}">${k}</span>`;};
-  const attachMap=await repDBHasAny(filtered.map(r=>r.id));
+  const attachMap={};for(const r of filtered)attachMap[r.id]=!!r._sbStoragePath;
   const clipIcon=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
   tbody.innerHTML=filtered.map(r=>`<tr style="border-bottom:1px solid var(--line);cursor:pointer;transition:background .08s" onclick="openRepairModal('${r.id}')" onmouseover="this.style.background='#f6f9fc'" onmouseout="this.style.background=''">
     <td style="padding:9px 14px;color:var(--muted);white-space:nowrap">${r.datum?new Date(r.datum+'T00:00:00').toLocaleDateString('de-DE'):'–'}</td>
@@ -7979,8 +8042,7 @@ function renderJahresplan(){
 }
 
 /* ══ SCHADENSMELDUNG ══ */
-function loadSchäden(){try{return JSON.parse(localStorage.getItem('schadenData')||'[]');}catch(e){return[];}}
-function saveSchäden(d){localStorage.setItem('schadenData',JSON.stringify(d));}
+function loadSchäden(){return _schadenCache||[];}
 
 const _SCHADEN_TYP={
   unfall:   {label:'Verkehrsunfall',bg:'#fef2f2',col:'#dc2626'},
@@ -8031,36 +8093,37 @@ function openSchadenModal(id){
 }
 function closeSchadenModal(){document.getElementById('schadenModal').classList.add('hidden');}
 
-function saveSchaden(){
+async function saveSchaden(){
   const beschreibung=document.getElementById('schadenBeschreibung').value.trim();
   const datum=document.getElementById('schadenDatum').value;
   if(!beschreibung||!datum){alert('Bitte Datum und Beschreibung ausfüllen.');return;}
   const id=_schadenEditId||('sch_'+Math.random().toString(36).slice(2,8));
-  let data=loadSchäden();
   const entry={
     id,
     typ:document.getElementById('schadenTyp').value,
     datum,
-    fahrzeug:document.getElementById('schadenFahrzeug').value,
-    fahrer:document.getElementById('schadenFahrer').value.trim(),
-    ort:document.getElementById('schadenOrt').value.trim(),
+    fahrzeug:document.getElementById('schadenFahrzeug').value||null,
+    fahrer:document.getElementById('schadenFahrer').value.trim()||null,
+    ort:document.getElementById('schadenOrt').value.trim()||null,
     beschreibung,
-    massnahmen:document.getElementById('schadenMassnahmen').value.trim(),
+    massnahmen:document.getElementById('schadenMassnahmen').value.trim()||null,
     personenschaden:document.getElementById('schadenPersonenschaden').checked,
     polizei:document.getElementById('schadenPolizei').checked,
     disposition:document.getElementById('schadenDisposition').checked,
     status:document.getElementById('schadenStatus').value,
   };
-  if(_schadenEditId){data=data.map(s=>s.id===_schadenEditId?entry:s);}
-  else{data.unshift(entry);}
-  saveSchäden(data);
+  const{error}=await _sb.from('schaeden').upsert(entry,{onConflict:'id'});
+  if(error){toast('Fehler beim Speichern: '+error.message);return;}
+  await _schadenSyncFromSupabase();
   closeSchadenModal();
   renderSchadensmeldung();
 }
 
-function deleteSchaden(id){
+async function deleteSchaden(id){
   if(!confirm('Eintrag wirklich löschen?'))return;
-  saveSchäden(loadSchäden().filter(s=>s.id!==id));
+  const{error}=await _sb.from('schaeden').delete().eq('id',id);
+  if(error){toast('Fehler beim Löschen: '+error.message);return;}
+  await _schadenSyncFromSupabase();
   renderSchadensmeldung();
 }
 
