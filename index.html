@@ -3506,7 +3506,7 @@ async function _uploadTzDateien(belegnr,datum,rawEntry){
   if(_tzFileData){
     const ext=(_tzFileData.name||'').split('.').pop()||'pdf';
     const path=`${belegnr}/tz_${datum}.${ext}`;
-    await _sb.storage.from('tageszettel').upload(path,dataUrlToBlob(_tzFileData.dataUrl),{upsert:true});
+    await _sb.storage.from('Tageszettel').upload(path,dataUrlToBlob(_tzFileData.dataUrl),{upsert:true});
     await _sb.from('tageszettel_dateien').delete().eq('belegnr',belegnr).eq('typ','tz');
     await _sb.from('tageszettel_dateien').insert({belegnr,typ:'tz',dateiname:_tzFileData.name,storage_path:path});
   }
@@ -3515,7 +3515,7 @@ async function _uploadTzDateien(belegnr,datum,rawEntry){
     const ext=(a._wsFile.name||'').split('.').pop()||'pdf';
     const safe=(a.ort||'WS').replace(/[^a-zA-Z0-9_\-]/g,'_');
     const path=`${belegnr}/ws_${safe}_${datum}.${ext}`;
-    await _sb.storage.from('tageszettel').upload(path,dataUrlToBlob(a._wsFile.dataUrl),{upsert:true});
+    await _sb.storage.from('Tageszettel').upload(path,dataUrlToBlob(a._wsFile.dataUrl),{upsert:true});
     await _sb.from('tageszettel_dateien').delete().eq('belegnr',belegnr).eq('abladeort',a.ort).eq('typ','ws');
     await _sb.from('tageszettel_dateien').insert({belegnr,typ:'ws',dateiname:a._wsFile.name,storage_path:path,abladeort:a.ort,ws_nr:a.wiegeschein||null});
   }
@@ -4297,7 +4297,7 @@ async function deleteEntry(){
     const paths=[];
     if(r._sbDatei.tz)paths.push(r._sbDatei.tz.storage_path);
     (r._sbDatei.wiegescheine||[]).forEach(w=>{if(w.storage_path)paths.push(w.storage_path);});
-    if(paths.length)await _sb.storage.from('tageszettel').remove(paths);
+    if(paths.length)await _sb.storage.from('Tageszettel').remove(paths);
     await _sb.from('tageszettel_dateien').delete().eq('belegnr',editingNr);
   }
   await _sb.from('tageszettel').delete().eq('belegnr',editingNr);
@@ -4415,7 +4415,7 @@ async function saveEdit(){
   if(_editTzFile){
     const ext=_editTzFile.name.split('.').pop()||'pdf';
     const path=`${editingNr}/tz_${updated.datum}.${ext}`;
-    await _sb.storage.from('tageszettel').upload(path,dataUrlToBlob(_editTzFile.dataUrl),{upsert:true});
+    await _sb.storage.from('Tageszettel').upload(path,dataUrlToBlob(_editTzFile.dataUrl),{upsert:true});
     await _sb.from('tageszettel_dateien').delete().eq('belegnr',editingNr).eq('typ','tz');
     await _sb.from('tageszettel_dateien').insert({belegnr:editingNr,typ:'tz',dateiname:_editTzFile.name,storage_path:path});
   }
@@ -4427,7 +4427,7 @@ async function saveEdit(){
     const ext=row._wsFile.name.split('.').pop()||'pdf';
     const safe=(a.ort||'WS').replace(/[^a-zA-Z0-9_\-]/g,'_');
     const path=`${editingNr}/ws_${safe}_${updated.datum}.${ext}`;
-    await _sb.storage.from('tageszettel').upload(path,dataUrlToBlob(row._wsFile.dataUrl),{upsert:true});
+    await _sb.storage.from('Tageszettel').upload(path,dataUrlToBlob(row._wsFile.dataUrl),{upsert:true});
     await _sb.from('tageszettel_dateien').delete().eq('belegnr',editingNr).eq('abladeort',a.ort).eq('typ','ws');
     await _sb.from('tageszettel_dateien').insert({belegnr:editingNr,typ:'ws',dateiname:row._wsFile.name,storage_path:path,abladeort:a.ort,ws_nr:a.wiegeschein||null});
   }
@@ -4707,7 +4707,7 @@ function switchDocTab(tab){
   if(tab==='tz'){
     if(docs.tz){fileUrl=docs.tz.dataUrl;fileName=docs.tz.displayName||docs.tz.name;}
     else if(sbDatei?.tz){
-      const{data}=_sb.storage.from('tageszettel').getPublicUrl(sbDatei.tz.storage_path);
+      const{data}=_sb.storage.from('Tageszettel').getPublicUrl(sbDatei.tz.storage_path);
       fileUrl=data.publicUrl;fileName=sbDatei.tz.dateiname;
     }
   } else {
@@ -4715,7 +4715,7 @@ function switchDocTab(tab){
     const ws=_docModalWsItems[idx];
     if(ws?.dataUrl){fileUrl=ws.dataUrl;fileName=ws.displayName||ws.name;}
     else if(ws?._sbPath){
-      const{data}=_sb.storage.from('tageszettel').getPublicUrl(ws._sbPath);
+      const{data}=_sb.storage.from('Tageszettel').getPublicUrl(ws._sbPath);
       fileUrl=data.publicUrl;fileName=ws.name;
     }
   }
@@ -8587,7 +8587,7 @@ async function uploadDrohnenBilder(files,standortId){
   let ok=0;
   for(const file of files){
     const path=`${standortId}/${monat}/${Date.now()}_${file.name}`;
-    const{error:upErr}=await _sb.storage.from('drohnen').upload(path,file,{upsert:true});
+    const{error:upErr}=await _sb.storage.from('Drohnen').upload(path,file,{upsert:true});
     if(upErr){console.error(upErr);continue;}
     await _sb.from('drohnen_dateien').insert({standort_id:standortId,monat,dateiname:file.name,storage_path:path});
     ok++;
@@ -8604,7 +8604,7 @@ async function openDrohnenGalerie(monat,standortId){
   const[yr,mo]=monat.split('-');
   const label=new Date(+yr,+mo-1,1).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
   const urls=await Promise.all(dateien.map(async d=>{
-    const{data}=_sb.storage.from('drohnen').getPublicUrl(d.storage_path);
+    const{data}=_sb.storage.from('Drohnen').getPublicUrl(d.storage_path);
     return{url:data?.publicUrl,name:d.dateiname,id:d.id,path:d.storage_path};
   }));
   let modal=document.getElementById('drohnenGalerieModal');
@@ -8630,7 +8630,7 @@ async function openDrohnenGalerie(monat,standortId){
 async function deleteDrohnenBild(fileId,path,monat,standortId){
   if(!confirm('Bild löschen?'))return;
   await Promise.all([
-    _sb.storage.from('drohnen').remove([path]),
+    _sb.storage.from('Drohnen').remove([path]),
     _sb.from('drohnen_dateien').delete().eq('id',fileId)
   ]);
   await _stdSyncFromSupabase();
