@@ -636,6 +636,9 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
 
 /* ── FUHRPARK SIDEBAR LAYOUT ── */
 .fp-layout{display:flex;min-height:calc(100vh - 99px)}
+.ka-layout{display:flex;min-height:calc(100vh - 99px)}
+.ka-content{flex:1;min-width:0;overflow-x:hidden}
+.ka-content main{max-width:none}
 .fp-sidenav{width:196px;flex-shrink:0;background:var(--white);border-right:1px solid var(--line);
   padding:20px 0;position:sticky;top:99px;align-self:flex-start;height:calc(100vh - 99px);
   display:flex;flex-direction:column;overflow-y:auto}
@@ -821,39 +824,6 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
   </div>
 </nav>
 
-<!-- ══ SUB-NAVIGATION (Kommunale Abfuhr) ══ -->
-<nav class="page-nav" id="subnav" style="display:none">
-  <div class="nav-inner">
-    <button class="nav-tab active" data-page="uebersicht" onclick="showPage('uebersicht')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Übersicht
-    </button>
-    <button class="nav-tab" data-page="erfassen" onclick="showPage('erfassen');startScan()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
-      Scan &amp; Erfassen
-    </button>
-    <button class="nav-tab" data-page="archiv" onclick="showPage('archiv')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-      Archiv
-    </button>
-    <button class="nav-tab" data-page="ki" onclick="showPage('ki')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><path d="M18 2l4 4-4 4"/><path d="M22 2l-4 4"/></svg>
-      KI-Analyse
-    </button>
-    <!-- Subnav Actions (rechts) -->
-    <div class="subnav-actions">
-      <span id="folderStatus" style="display:none"></span>
-      <button class="btn-subnav" onclick="printTageszettel()" title="Tageszettel drucken">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Drucken
-      </button>
-      <button class="btn-subnav btn-subnav-scan" onclick="showPage('erfassen');startScan()">
-        + Neuer Scan
-      </button>
-    </div>
-  </div>
-</nav>
-
 <!-- ══════════════════════════════════════
      PAGE: HOME
 ══════════════════════════════════════ -->
@@ -985,6 +955,38 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
 </main>
 </div>
 
+<!-- ══ KA-LAYOUT (Kommunale Abfuhr) ══ -->
+<div id="ka-layout" class="ka-layout" style="display:none">
+  <nav class="fp-sidenav">
+    <div class="fp-sidenav-label">Kommunale Abfuhr</div>
+    <button class="fp-snav-btn active" data-page="uebersicht" onclick="showPage('uebersicht')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Übersicht
+    </button>
+    <button class="fp-snav-btn" data-page="erfassen" onclick="showPage('erfassen');startScan()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+      Scan &amp; Erfassen
+    </button>
+    <button class="fp-snav-btn" data-page="archiv" onclick="showPage('archiv')">
+      <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+      Archiv
+    </button>
+    <button class="fp-snav-btn" data-page="ki" onclick="showPage('ki')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      KI-Analyse
+    </button>
+    <div style="margin-top:auto;padding:14px 10px;display:flex;flex-direction:column;gap:7px;border-top:1px solid var(--line)">
+      <span id="folderStatus" style="display:none"></span>
+      <button class="btn btn-ghost btn-lg" style="width:100%;justify-content:center;font-size:12px;height:34px" onclick="printTageszettel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Drucken
+      </button>
+      <button class="btn btn-green" style="width:100%;justify-content:center;font-size:12px" onclick="showPage('erfassen');startScan()">
+        + Neuer Scan
+      </button>
+    </div>
+  </nav>
+  <div class="ka-content">
 <!-- ══════════════════════════════════════
      PAGE: ÜBERSICHT
 ══════════════════════════════════════ -->
@@ -1506,6 +1508,9 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
   </div>
 </main>
 </div>
+
+  </div><!-- /ka-content -->
+</div><!-- /ka-layout -->
 
 <!-- ══════════════════════════════════════
      PAGE: AUSWERTUNG
@@ -6223,8 +6228,8 @@ function renderAuswertung(){
 
 function showModule(m){
   document.querySelectorAll('.main-tab').forEach(t=>t.classList.toggle('active',t.dataset.module===m));
-  const subnav=document.getElementById('subnav');
-  subnav.style.display=(m==='abfall')?'':'none';
+  const kalayout=document.getElementById('ka-layout');
+  kalayout.style.display=(m==='abfall')?'flex':'none';
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   if(m==='home'){
     document.getElementById('page-home').classList.add('active');
@@ -6232,7 +6237,7 @@ function showModule(m){
   }else if(m==='abfall'){
     const last=window._lastAbfallPage||'uebersicht';
     document.getElementById('page-'+last).classList.add('active');
-    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.page===last));
+    document.querySelectorAll('.fp-snav-btn[data-page]').forEach(t=>t.classList.toggle('active',t.dataset.page===last));
     if(last==='uebersicht'){allData=buildAllData();refreshDrops();if(dashboardActive)applyFilters();else showEmptyState();}
     else if(last==='archiv'){allData=buildAllData();renderArchiv();}
     else if(last==='ki'){initKiPage();}
@@ -9439,11 +9444,11 @@ function saveStdDoc(){
 
 function showPage(p){
   document.querySelectorAll('.main-tab').forEach(t=>t.classList.toggle('active',t.dataset.module==='abfall'));
-  document.getElementById('subnav').style.display='';
+  document.getElementById('ka-layout').style.display='flex';
   window._lastAbfallPage=p;
-  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('#ka-layout .page').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.page===p));
+  document.querySelectorAll('.fp-snav-btn[data-page]').forEach(t=>t.classList.toggle('active',t.dataset.page===p));
   if(p==='archiv'){allData=buildAllData();const sf=document.getElementById('aFltStatus');if(sf)sf.value='';const sq=document.getElementById('archSearch');if(sq)sq.value='';renderArchiv();}
   if(p==='uebersicht'){allData=buildAllData();refreshDrops();if(dashboardActive)applyFilters();else showEmptyState();}
   if(p==='ki'){initKiPage();}
