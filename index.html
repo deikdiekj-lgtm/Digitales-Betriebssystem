@@ -4117,12 +4117,24 @@ function goToKontrolle(){
     if(!val){document.getElementById(eid).textContent=msg;document.getElementById(fid).classList.add('err');ok=false}
     else{document.getElementById(eid).textContent='';document.getElementById(fid).classList.remove('err')}
   });
-  // Validate abladeorte
+  // Validate abladeorte — alle Zeilen prüfen, auch ohne Ort
+  const alleZeilen=[...document.querySelectorAll('#abladeort-list .ab-row')];
   const abladeorte=getAbladeorte();
   const eOrt=document.getElementById('e-ort');
-  if(!abladeorte.length){if(eOrt)eOrt.textContent='Mind. ein Abladeort erforderlich';ok=false}
+  // Zeilen mit Datei aber ohne Ort erkennen
+  const ohneOrtMitDatei=alleZeilen.filter(row=>{
+    const rowId=row.dataset.rowId||'';
+    const hatDatei=!!(_wsFileMap[rowId]);
+    const ort=row.querySelector('.ab-ort')?.value||'';
+    return hatDatei&&!ort;
+  });
+  if(ohneOrtMitDatei.length){
+    if(eOrt)eOrt.textContent='Bitte für jeden Wiegeschein einen Abladeort wählen';
+    ohneOrtMitDatei.forEach(row=>row.querySelector('.ab-ort')?.classList.add('err'));
+    ok=false;
+  } else if(!abladeorte.length){if(eOrt)eOrt.textContent='Mind. ein Abladeort erforderlich';ok=false}
   else if(abladeorte.some(a=>!a.gewicht||a.gewicht<=0)){if(eOrt)eOrt.textContent='Bitte Gewicht für jeden Abladeort eintragen';ok=false}
-  else{if(eOrt)eOrt.textContent=''}
+  else{if(eOrt)eOrt.textContent='';alleZeilen.forEach(row=>row.querySelector('.ab-ort')?.classList.remove('err'));}
   if(!ok)return;
   const entry=buildEntry();
   buildReview(entry,'reviewWrap');
@@ -4701,6 +4713,9 @@ async function handleRowWS(input){
   if(btn){btn.textContent='Wird analysiert …';btn.disabled=true}
   const dataUrl=await readFileAsDataURL(file);
   _wsFileMap[rowId]={dataUrl,name:file.name,type:ext};
+  // Wenn noch kein Ort gewählt: Dropdown rot markieren als Hinweis
+  const ortSelect=row.querySelector('.ab-ort');
+  if(ortSelect&&!ortSelect.value){ortSelect.classList.add('err');ortSelect.focus();}
   // Simulate OCR with short delay
   setTimeout(()=>{
     const wsNr='WS-'+(9200+Math.floor(Math.random()*500));
