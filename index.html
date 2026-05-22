@@ -657,6 +657,11 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
 .fp-content{flex:1;padding:28px;overflow-y:auto;min-width:0}
 .fp-view{display:none}
 .fp-view.active{display:block}
+.fp-subnav{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:22px}
+.fp-subnav-btn{display:flex;align-items:center;gap:7px;padding:8px 18px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);font-family:var(--sans);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
+.fp-subnav-btn svg{width:13px;height:13px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2}
+.fp-subnav-btn:hover{color:var(--navy)}
+.fp-subnav-btn.active{color:var(--navy);font-weight:700;border-bottom-color:var(--navy)}
 
 /* Dashboard KPIs */
 .fp-dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
@@ -1635,35 +1640,23 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
 
     <!-- ── DASHBOARD ── -->
     <div id="fp-view-dashboard" class="fp-view active">
-      <div style="margin-bottom:20px">
+      <div style="margin-bottom:24px">
         <div style="font-size:17px;font-weight:700;color:var(--navy)">Dashboard</div>
         <div style="font-size:12px;color:var(--muted);margin-top:3px">Statusübersicht aller Fahrzeuge & Maschinen auf einen Blick</div>
       </div>
-      <div class="fp-dash-kpis" id="fp-kpi-row"></div>
-      <div id="fp-kontrolle-alerts" style="margin-bottom:4px"></div>
-      <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
-        <div>
-          <div style="font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono)">Ampel-Übersicht</div>
-          <div class="fp-ampel-wrap">
-            <table class="fp-ampel-table">
-              <thead><tr>
-                <th>Fahrzeuge & Maschinen</th>
-                <th>Typ</th>
-                <th style="text-align:center" title="Hauptuntersuchung">HU</th>
-                <th style="text-align:center" title="Sicherheitsprüfung">SP</th>
-                <th style="text-align:center" title="Unfallverhütungsvorschriften">UVV</th>
-                <th style="text-align:center" title="Tacho-Prüfung">Tacho</th>
-                <th style="text-align:center" title="Wartung">Wartung</th>
-              </tr></thead>
-              <tbody id="fp-ampel-body"></tbody>
-            </table>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono)">Nächste Fristen</div>
-          <div class="fp-upcoming" id="fp-upcoming-list"></div>
-        </div>
+      <!-- In-Arbeit-Placeholder -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;background:var(--white);border:1px solid var(--line);border-radius:12px">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px">Demnächst verfügbar</div>
+        <div style="font-size:13px;color:var(--muted);max-width:320px;line-height:1.6">Dieses Modul wird gerade entwickelt und steht in Kürze zur Verfügung.</div>
       </div>
+      <!-- hidden anchors so renderFpDashboard() finds its elements -->
+      <div id="fp-kpi-row" style="display:none"></div>
+      <div id="fp-kontrolle-alerts" style="display:none"></div>
+      <div id="fp-ampel-body" style="display:none"></div>
+      <div id="fp-upcoming-list" style="display:none"></div>
     </div>
 
     <!-- ── BETRIEBSMITTEL ── -->
@@ -1743,10 +1736,16 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
         </div>
       </div>
 
-      <!-- Tab-Switcher -->
-      <div style="display:flex;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px;gap:2px;margin-bottom:20px;width:fit-content">
-        <button class="tank-tab-btn" data-tt="uebersicht" onclick="showTankTab('uebersicht')" style="padding:5px 16px;border:none;border-radius:4px;font-size:12px;font-family:var(--sans);cursor:pointer;background:var(--navy);color:#fff;font-weight:600;transition:all .15s">Übersicht</button>
-        <button class="tank-tab-btn" data-tt="eintraege" onclick="showTankTab('eintraege')" style="padding:5px 16px;border:none;border-radius:4px;font-size:12px;font-family:var(--sans);cursor:pointer;background:transparent;color:var(--muted);font-weight:400;transition:all .15s">Einträge</button>
+      <!-- Sub-Tab-Navigation -->
+      <div class="fp-subnav">
+        <button class="fp-subnav-btn tank-tab-btn active" data-tt="uebersicht" onclick="showTankTab('uebersicht')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Übersicht
+        </button>
+        <button class="fp-subnav-btn tank-tab-btn" data-tt="eintraege" onclick="showTankTab('eintraege')">
+          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Einträge
+        </button>
       </div>
 
       <!-- ── ÜBERSICHT ── -->
@@ -1954,9 +1953,15 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
       </div>
 
       <!-- Tab-Switcher -->
-      <div style="display:flex;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px;gap:2px;margin-bottom:20px;width:fit-content">
-        <button class="pruef-tab-btn" data-pt="uebersicht" onclick="showPruefTab('uebersicht')" style="padding:5px 16px;border:none;border-radius:4px;font-size:12px;font-family:var(--sans);cursor:pointer;background:var(--navy);color:#fff;font-weight:600;transition:all .15s">Übersicht</button>
-        <button class="pruef-tab-btn" data-pt="historie" onclick="showPruefTab('historie')" style="padding:5px 16px;border:none;border-radius:4px;font-size:12px;font-family:var(--sans);cursor:pointer;background:transparent;color:var(--muted);font-weight:400;transition:all .15s">Historie</button>
+      <div class="fp-subnav">
+        <button class="fp-subnav-btn pruef-tab-btn active" data-pt="uebersicht" onclick="showPruefTab('uebersicht')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Übersicht
+        </button>
+        <button class="fp-subnav-btn pruef-tab-btn" data-pt="historie" onclick="showPruefTab('historie')">
+          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Historie
+        </button>
       </div>
 
       <!-- Übersicht -->
@@ -2056,9 +2061,15 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
       </div>
 
       <!-- Tab Switcher -->
-      <div style="display:flex;gap:4px;padding:4px;background:#f1f5f9;border-radius:8px;width:fit-content;margin-bottom:18px">
-        <button class="rep-tab-btn" data-rt="uebersicht" onclick="showRepTab('uebersicht')" style="padding:5px 16px;border:none;border-radius:4px;font-size:12px;font-family:var(--sans);cursor:pointer;background:var(--navy);color:#fff;font-weight:600;transition:all .15s">Übersicht</button>
-        <button class="rep-tab-btn" data-rt="eintraege" onclick="showRepTab('eintraege')" style="padding:5px 16px;border:none;border-radius:4px;font-size:12px;font-family:var(--sans);cursor:pointer;background:transparent;color:var(--muted);font-weight:400;transition:all .15s">Einträge</button>
+      <div class="fp-subnav">
+        <button class="fp-subnav-btn rep-tab-btn active" data-rt="uebersicht" onclick="showRepTab('uebersicht')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Übersicht
+        </button>
+        <button class="fp-subnav-btn rep-tab-btn" data-rt="eintraege" onclick="showRepTab('eintraege')">
+          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Einträge
+        </button>
       </div>
 
       <!-- ÜBERSICHT TAB -->
@@ -2208,14 +2219,11 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
     <!-- ── JAHRESPLAN ── -->
     <!-- ── SCHADENSMELDUNG ── -->
     <div id="fp-view-schadensmeldung" class="fp-view">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-        <div>
-          <div style="font-size:17px;font-weight:700;color:var(--navy)">Schadensmeldung</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:3px">Verkehrsunfälle & Umweltschäden erfassen und dokumentieren</div>
-        </div>
-      </div>
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;background:var(--white);border:1px solid var(--line);border-radius:12px">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" style="margin-bottom:16px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
         <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px">Demnächst verfügbar</div>
         <div style="font-size:13px;color:var(--muted);max-width:320px;line-height:1.6">Dieses Modul wird gerade entwickelt und steht in Kürze zur Verfügung.</div>
       </div>
@@ -2319,9 +2327,7 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
         </div>
       </div>
 
-      <!-- Schadensliste -->
-      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">Gemeldete Schäden</div>
-      <div id="schadenListe"></div>
+      <div id="schadenListe" style="display:none"></div>
     </div>
 
     <div id="fp-view-jahresplan" class="fp-view">
@@ -2355,11 +2361,12 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
       <div class="mph-sub">Fahrer-Auswertung, KM-Leistung und Arbeitszeiten im Überblick</div>
     </div>
   </div>
-  <div style="background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:32px;text-align:center;box-shadow:var(--shadow)">
-    <div style="opacity:.25;margin-bottom:14px"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-    <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:8px">Personal-Auswertung</div>
-    <div style="font-size:12.5px;color:var(--muted);margin-bottom:20px">Die detaillierte Auswertung findest du unter<br><strong>Kommunale Abfuhr → Auswertung</strong></div>
-    <button class="btn btn-primary" onclick="showModule('abfall');showPage('auswertung')">Zur Auswertung</button>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;background:var(--white);border:1px solid var(--line);border-radius:12px">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px">Demnächst verfügbar</div>
+    <div style="font-size:13px;color:var(--muted);max-width:320px;line-height:1.6">Dieses Modul wird gerade entwickelt und steht in Kürze zur Verfügung.</div>
   </div>
 </main>
 </div>
@@ -5226,6 +5233,7 @@ function fpWorstCls(clsList){
 }
 
 function renderFpDashboard(){
+  return; // Dashboard in Arbeit — Placeholder aktiv
   const fzData=loadFahrzeuge();
   const typLabels={mull:'Müllwagen',absetzer:'Absetzer',abroller:'Abroller',
     schredder:'Schredder',hacker:'Hacker',radlader:'Radlader',bagger:'Bagger',
@@ -5870,12 +5878,7 @@ function resetTankFilter(){
 let _tankTab='uebersicht';
 function showTankTab(tab){
   _tankTab=tab;
-  document.querySelectorAll('.tank-tab-btn').forEach(b=>{
-    const active=b.dataset.tt===tab;
-    b.style.background=active?'var(--navy)':'transparent';
-    b.style.color=active?'#fff':'var(--muted)';
-    b.style.fontWeight=active?'600':'400';
-  });
+  document.querySelectorAll('.tank-tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tt===tab));
   document.getElementById('tank-ov-view').style.display=tab==='uebersicht'?'block':'none';
   document.getElementById('tank-eintr-view').style.display=tab==='eintraege'?'block':'none';
   if(tab==='eintraege') renderTankEintraege();
@@ -7253,12 +7256,7 @@ function setPruefSearch(v){_pruefSearch=v;renderPruefView();}
 
 function showPruefTab(tab){
   _pruefTab=tab;
-  document.querySelectorAll('.pruef-tab-btn').forEach(b=>{
-    const active=b.dataset.pt===tab;
-    b.style.background=active?'var(--navy)':'transparent';
-    b.style.color=active?'#fff':'var(--muted)';
-    b.style.fontWeight=active?'600':'400';
-  });
+  document.querySelectorAll('.pruef-tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.pt===tab));
   document.getElementById('pruef-ov-view').style.display=tab==='uebersicht'?'block':'none';
   document.getElementById('pruef-hist-view').style.display=tab==='historie'?'block':'none';
   if(tab==='historie') renderPruefHistorie();
@@ -7707,12 +7705,7 @@ let _repShowAll=false;
 
 function showRepTab(tab){
   _repTab=tab;
-  document.querySelectorAll('.rep-tab-btn').forEach(b=>{
-    const active=b.dataset.rt===tab;
-    b.style.background=active?'var(--navy)':'transparent';
-    b.style.color=active?'#fff':'var(--muted)';
-    b.style.fontWeight=active?'600':'400';
-  });
+  document.querySelectorAll('.rep-tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.rt===tab));
   document.getElementById('rep-ov-view').style.display=tab==='uebersicht'?'block':'none';
   document.getElementById('rep-eintr-view').style.display=tab==='eintraege'?'block':'none';
   if(tab==='eintraege') renderRepEintraege();
