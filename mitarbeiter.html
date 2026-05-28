@@ -8,150 +8,186 @@
 :root{
   --navy:#1e3a5f;--green:#16a34a;--red:#dc2626;--orange:#ea580c;
   --white:#fff;--bg:#f1f5f9;--line:#e2e8f0;--muted:#64748b;
-  --sans:'Segoe UI',system-ui,-apple-system,sans-serif;--r:10px;
+  --sans:'Segoe UI',system-ui,-apple-system,sans-serif;--r:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--sans);background:var(--bg);color:var(--navy);min-height:100vh}
 
-/* LOGIN */
-#loginScreen{display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:48px 20px 24px}
-.login-logo{width:60px;height:60px;background:var(--navy);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 4px 14px rgba(30,58,95,.22)}
-.login-title{font-size:20px;font-weight:700;color:var(--navy);margin-bottom:4px}
-.login-sub{font-size:13px;color:var(--muted);margin-bottom:36px;text-align:center;line-height:1.5}
-.step-label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
-.ma-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:300px;margin-bottom:8px}
-.ma-btn{padding:18px 12px;border:2px solid var(--line);border-radius:var(--r);background:var(--white);cursor:pointer;font-family:var(--sans);font-size:14px;font-weight:700;color:var(--navy);text-align:center;transition:all .15s;line-height:1.3}
-.ma-btn:hover{border-color:var(--navy);background:#f8fafc}
-.ma-btn.sel{border-color:var(--navy);background:var(--navy);color:var(--white)}
+/* ── LOGIN ─────────────────────────────────────────────────── */
+#loginScreen{display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:52px 24px 32px}
+.login-logo{width:64px;height:64px;background:var(--navy);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 6px 20px rgba(30,58,95,.28)}
+.login-title{font-size:21px;font-weight:700;color:var(--navy);margin-bottom:5px;letter-spacing:-.3px}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:38px;text-align:center;line-height:1.6}
+.step-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px}
+.ma-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:300px;margin-bottom:8px}
+.ma-btn{padding:18px 12px 16px;border:2px solid var(--line);border-radius:14px;background:var(--white);cursor:pointer;font-family:var(--sans);text-align:center;transition:all .15s;box-shadow:var(--shadow)}
+.ma-btn:hover{border-color:var(--navy);box-shadow:0 3px 12px rgba(30,58,95,.12)}
+.ma-btn.sel{border-color:var(--navy);background:var(--navy)}
+.ma-avatar{width:46px;height:46px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--navy);margin:0 auto 10px;transition:all .15s}
+.ma-btn.sel .ma-avatar{background:rgba(255,255,255,.2);color:#fff}
+.ma-name{font-size:13.5px;font-weight:700;color:var(--navy);line-height:1.3;transition:color .15s}
+.ma-btn.sel .ma-name{color:#fff}
 
-/* PIN */
+/* ── PIN ───────────────────────────────────────────────────── */
 #pinSection{display:none;flex-direction:column;align-items:center;width:100%;max-width:272px}
-.pin-name{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:18px;text-align:center}
-.pin-dots{display:flex;gap:14px;margin-bottom:26px}
-.pin-dot{width:14px;height:14px;border-radius:50%;border:2.5px solid var(--line);transition:all .15s}
-.pin-dot.on{background:var(--navy);border-color:var(--navy)}
+.pin-back{align-self:flex-start;background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;padding:8px 0 18px;display:flex;align-items:center;gap:6px}
+.pin-name{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:22px;text-align:center}
+.pin-dots{display:flex;gap:16px;margin-bottom:30px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);transition:all .15s}
+.pin-dot.on{background:var(--navy);border-color:var(--navy);transform:scale(1.1)}
 .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
-.pk{padding:17px;border:none;border-radius:var(--r);background:var(--white);box-shadow:0 1px 3px rgba(0,0,0,.09);font-family:var(--sans);font-size:20px;font-weight:600;color:var(--navy);cursor:pointer;text-align:center;transition:background .08s,transform .07s;user-select:none}
-.pk:active{background:var(--navy);color:var(--white);transform:scale(.91)}
-.pk.sm{font-size:13px;color:var(--muted)}
-.pin-cancel{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:12px;cursor:pointer;padding:12px;margin-top:4px}
-.pin-err{color:var(--red);font-size:12.5px;font-weight:600;margin-top:12px;text-align:center;display:none}
+.pk{padding:18px;border:none;border-radius:12px;background:var(--white);box-shadow:var(--shadow);font-family:var(--sans);font-size:21px;font-weight:600;color:var(--navy);cursor:pointer;text-align:center;transition:background .08s,transform .07s;user-select:none;display:flex;align-items:center;justify-content:center;min-height:58px}
+.pk:active{background:var(--navy);color:var(--white);transform:scale(.92)}
+.pk.ghost{background:transparent;box-shadow:none;pointer-events:none}
+.pk.icon-pk{background:#f8fafc}
+.pk.icon-pk svg{width:22px;height:22px;stroke:var(--muted);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.pk.icon-pk:active{background:var(--navy)}
+.pk.icon-pk:active svg{stroke:#fff}
+.pin-err{color:var(--red);font-size:12.5px;font-weight:600;margin-top:14px;text-align:center;display:none;background:#fee2e2;padding:9px 16px;border-radius:8px;width:100%}
 
-/* APP */
+/* ── APP SHELL ─────────────────────────────────────────────── */
 #appScreen{display:none;flex-direction:column;min-height:100vh}
-.app-hdr{background:var(--navy);padding:15px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.app-hdr{background:var(--navy);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.app-hdr-left{display:flex;align-items:center;gap:12px}
+.app-av{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:.5px}
 .app-hdr-name{font-size:16px;font-weight:700;color:#fff}
-.app-hdr-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
-.app-logout-btn{background:rgba(255,255,255,.14);border:none;color:#fff;border-radius:6px;padding:6px 12px;font-family:var(--sans);font-size:12px;cursor:pointer}
-.tab-bar{background:var(--white);border-bottom:1px solid var(--line);display:flex;position:sticky;top:56px;z-index:9}
-.tab-btn{flex:1;padding:10px 4px;border:none;background:transparent;font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
-.tab-btn svg{width:18px;height:18px;stroke-width:2;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
-.tab-btn.on{color:var(--navy);border-bottom-color:var(--navy)}
-.app-body{padding:14px;max-width:560px;width:100%;margin:0 auto}
+.app-hdr-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
+.app-logout{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.9);border-radius:8px;padding:7px 13px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .12s}
+.app-logout:hover{background:rgba(255,255,255,.2)}
+.app-logout svg{width:14px;height:14px;stroke:rgba(255,255,255,.9);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--line);display:flex;z-index:10;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tab-btn{flex:1;padding:10px 4px;border:none;background:transparent;font-family:var(--sans);font-size:10.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:color .15s;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:56px}
+.tab-btn svg{width:22px;height:22px;stroke-width:2;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+.tab-btn.on{color:var(--navy)}
+.app-body{flex:1;padding:16px 14px 84px;max-width:560px;width:100%;margin:0 auto}
 
-/* CARDS */
-.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
-.card-hdr{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
-.card-hdr .count{color:var(--navy);font-size:13px}
+/* ── CARDS ─────────────────────────────────────────────────── */
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-hdr{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.card-hdr .cnt{background:var(--bg);color:var(--navy);font-size:12px;font-weight:700;padding:2px 9px;border-radius:6px}
 
-/* AUFGABEN */
-.task{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+/* ── AUFGABEN ──────────────────────────────────────────────── */
+.task{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .task:last-child{border-bottom:none;padding-bottom:0}
-.task-cb{width:22px;height:22px;border:2px solid var(--line);border-radius:5px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s;background:var(--white)}
+.task-cb{width:24px;height:24px;border:2px solid var(--line);border-radius:6px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s;background:var(--white)}
 .task-cb.done{background:var(--green);border-color:var(--green)}
-.task-title{font-size:13.5px;font-weight:600;color:var(--navy)}
+.task-title{font-size:14px;font-weight:600;color:var(--navy);line-height:1.4}
 .task-title.done{text-decoration:line-through;color:var(--muted);font-weight:400}
-.task-desc{font-size:12px;color:var(--muted);margin-top:2px}
-.prio{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;margin-top:4px}
+.task-desc{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.prio{display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;margin-top:5px;text-transform:uppercase;letter-spacing:.2px}
 .p-hoch{background:#fee2e2;color:#b91c1c}
 .p-normal{background:#dbeafe;color:#1d4ed8}
 .p-niedrig{background:#dcfce7;color:#15803d}
-.done-info{font-size:10.5px;color:var(--muted);margin-top:3px}
+.done-info{font-size:10.5px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px}
+.done-info svg{width:10px;height:10px;stroke:var(--muted);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.empty{text-align:center;padding:36px 16px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty svg{width:42px;height:42px;stroke:var(--line);stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.empty-txt{color:var(--muted);font-size:13px}
 
-/* WOCHENZETTEL */
-.wk-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.wk-nav-btn{background:var(--white);border:1.5px solid var(--line);border-radius:7px;width:34px;height:34px;cursor:pointer;font-size:18px;color:var(--navy);display:flex;align-items:center;justify-content:center;transition:border-color .1s}
+/* ── WOCHENZETTEL ──────────────────────────────────────────── */
+.wk-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:8px}
+.wk-nav-btn{background:var(--bg);border:1.5px solid var(--line);border-radius:9px;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.wk-nav-btn svg{width:18px;height:18px;stroke:var(--navy);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.wk-nav-btn:hover:not(:disabled){border-color:var(--navy)}
 .wk-nav-btn:disabled{opacity:.3;cursor:default}
-.wk-lbl{font-size:13px;font-weight:700;color:var(--navy);text-align:center}
-.wk-sub{font-size:11px;color:var(--muted);text-align:center;margin-top:2px}
-.day-row{display:grid;grid-template-columns:42px 72px 1fr;gap:8px;align-items:start;margin-bottom:10px}
-.day-lbl{font-size:12.5px;font-weight:700;color:var(--navy);padding-top:8px;line-height:1}
-.day-date{font-size:9.5px;color:var(--muted);margin-top:2px}
-.day-std{border:1.5px solid var(--line);border-radius:7px;padding:7px;font-family:var(--sans);font-size:13px;color:var(--navy);text-align:center;width:100%;outline:none;background:var(--white)}
-.day-std:focus{border-color:var(--navy)}
-.day-bem{border:1.5px solid var(--line);border-radius:7px;padding:7px 9px;font-family:var(--sans);font-size:12px;color:var(--navy);width:100%;outline:none;background:var(--white);transition:border-color .12s}
+.wk-lbl{font-size:14px;font-weight:700;color:var(--navy);text-align:center}
+.wk-sub{font-size:11.5px;color:var(--muted);text-align:center;margin-top:4px}
+.day-row{display:grid;grid-template-columns:42px 62px 60px 1fr;gap:8px;align-items:start;margin-bottom:10px}
+.day-lbl{font-size:13px;font-weight:700;color:var(--navy);padding-top:8px}
+.day-date{font-size:9.5px;color:var(--muted);margin-top:2px;font-weight:500}
+.day-std,.day-pause{border:1.5px solid var(--line);border-radius:8px;padding:8px;font-family:var(--sans);font-size:13px;color:var(--navy);text-align:center;width:100%;outline:none;background:var(--white);transition:border-color .12s}
+.day-std:focus,.day-pause:focus{border-color:var(--navy)}
+.day-bem{border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--navy);width:100%;outline:none;background:var(--white);transition:border-color .12s}
 .day-bem:focus{border-color:var(--navy)}
-.day-std[readonly],.day-bem[readonly]{background:var(--bg);color:var(--muted);cursor:default;border-color:var(--line)}
-.wk-total{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:7px;margin:14px 0}
-.wk-total-lbl{font-size:12px;font-weight:600;color:var(--muted)}
-.wk-total-val{font-size:17px;font-weight:700;color:var(--navy)}
-.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:10.5px;font-weight:700}
+.day-std[readonly],.day-pause[readonly],.day-bem[readonly],select.day-bem:disabled{background:var(--bg);color:var(--muted);cursor:default;border-color:transparent}
+.day-col-hdr{display:grid;grid-template-columns:42px 62px 60px 1fr;gap:8px;margin-bottom:6px}
+.day-col-hdr span{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center}
+.day-col-hdr span:first-child,.day-col-hdr span:last-child{text-align:left}
+.wk-total{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-radius:9px;margin-top:16px;margin-bottom:8px}
+.wk-total-lbl{font-size:12.5px;font-weight:600;color:var(--muted)}
+.wk-total-val{font-size:18px;font-weight:700;color:var(--navy)}
+.wk-netto{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#eff6ff;border-radius:9px;margin-bottom:16px}
+.wk-netto-lbl{font-size:12.5px;font-weight:600;color:#1d4ed8}
+.wk-netto-val{font-size:18px;font-weight:700;color:#1d4ed8}
+.wz-hist-item{padding:12px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.wz-hist-item:last-child{border-bottom:none}
+
+/* ── BADGES ────────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:10.5px;font-weight:700}
+.badge svg{width:10px;height:10px;stroke-width:3;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .b-entwurf{background:#f1f5f9;color:#64748b}
 .b-eingereicht{background:#dcfce7;color:#15803d}
 .b-beantragt{background:#fef9c3;color:#854d0e}
 .b-genehmigt{background:#dcfce7;color:#15803d}
 .b-abgelehnt{background:#fee2e2;color:#b91c1c}
 
-/* URLAUB */
+/* ── URLAUB ────────────────────────────────────────────────── */
 .uk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
-.uk-item{background:var(--bg);border-radius:8px;padding:10px 6px;text-align:center}
-.uk-val{font-size:22px;font-weight:700;color:var(--navy)}
-.uk-lbl{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.4}
-.form-row{margin-bottom:12px}
-.form-lbl{font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:5px;display:block}
-.form-inp{border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;font-family:var(--sans);font-size:13.5px;color:var(--navy);width:100%;outline:none;background:var(--white);transition:border-color .12s}
+.uk-item{background:var(--bg);border-radius:10px;padding:12px 6px;text-align:center}
+.uk-val{font-size:24px;font-weight:700;color:var(--navy);line-height:1}
+.uk-lbl{font-size:9px;color:var(--muted);margin-top:4px;line-height:1.4;text-transform:uppercase;font-weight:600;letter-spacing:.2px}
+.form-row{margin-bottom:14px}
+.form-lbl{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.4px}
+.form-inp{border:1.5px solid var(--line);border-radius:9px;padding:11px 13px;font-family:var(--sans);font-size:14px;color:var(--navy);width:100%;outline:none;background:var(--white);transition:border-color .12s}
 .form-inp:focus{border-color:var(--navy)}
-textarea.form-inp{resize:vertical;min-height:70px}
-.arb-hint{font-size:12px;font-weight:600;padding:7px 11px;border-radius:6px;margin-top:6px;display:none}
+textarea.form-inp{resize:vertical;min-height:72px}
+.arb-hint{font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:8px;margin-top:8px;align-items:center;gap:6px}
+.arb-hint svg{width:14px;height:14px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .arb-hint.ok{color:#166534;background:#dcfce7}
 .arb-hint.err{color:var(--red);background:#fee2e2}
-.ur-row{padding:11px 0;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.ur-row{padding:12px 0;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .ur-row:last-child{border-bottom:none}
-.ur-dates{font-size:13px;font-weight:600;color:var(--navy)}
-.ur-tage{font-size:11.5px;color:var(--muted);margin-top:1px}
-.ur-notiz{font-size:11.5px;color:var(--muted);margin-top:2px;font-style:italic}
+.ur-dates{font-size:13.5px;font-weight:700;color:var(--navy)}
+.ur-tage{font-size:11.5px;color:var(--muted);margin-top:2px}
+.ur-notiz{font-size:11.5px;color:var(--muted);margin-top:3px;font-style:italic}
 
-/* BUTTONS */
-.btn-main{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px 20px;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s}
+/* ── BUTTONS ───────────────────────────────────────────────── */
+.btn-main{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:14px 20px;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-main svg{width:16px;height:16px;stroke:#fff;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .btn-main:hover{opacity:.88}
 .btn-main:disabled{opacity:.38;cursor:not-allowed}
-.btn-sec{background:transparent;color:var(--navy);border:1.5px solid var(--line);border-radius:8px;padding:11px 16px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:border-color .12s;white-space:nowrap}
+.btn-sec{background:transparent;color:var(--navy);border:1.5px solid var(--line);border-radius:10px;padding:13px 16px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:border-color .12s;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-sec svg{width:15px;height:15px;stroke:var(--navy);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .btn-sec:hover{border-color:var(--navy)}
 .btn-row{display:flex;gap:8px}
 
-/* EMPTY */
-.empty{text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;font-style:italic}
-
-/* TOAST */
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(14px);background:#1e3a5f;color:#fff;padding:11px 22px;border-radius:9px;font-size:13px;font-weight:600;opacity:0;transition:all .22s;z-index:999;white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center}
+/* ── TOAST ─────────────────────────────────────────────────── */
+#toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(10px);background:#1e3a5f;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transition:all .22s;z-index:999;white-space:nowrap;pointer-events:none;max-width:88vw;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.18)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* WZ HISTORY */
-.wz-hist-item{padding:10px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
-.wz-hist-item:last-child{border-bottom:none}
 </style>
 </head>
 <body>
 
-<!-- ─── LOGIN ─────────────────────────────────────────── -->
+<!-- ─── LOGIN ──────────────────────────────────────────────── -->
 <div id="loginScreen">
   <div class="login-logo">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
       <polyline points="9 22 9 12 15 12 15 22"/>
     </svg>
   </div>
   <div class="login-title">Diekjobst — Tappendorf</div>
-  <div class="login-sub">Mitarbeiter-Portal<br>Bitte Name auswählen und PIN eingeben</div>
+  <div class="login-sub">Mitarbeiter-Portal<br>Name auswählen und PIN eingeben</div>
 
   <div class="step-label" id="stepLabel">Wer bist du?</div>
-  <div class="ma-grid" id="maGrid"><div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:20px">Lade…</div></div>
+  <div class="ma-grid" id="maGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:28px">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--line)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    </div>
+  </div>
 
   <div id="pinSection">
+    <button class="pin-back" onclick="pkCancel()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Zurück
+    </button>
     <div class="pin-name" id="pinName"></div>
     <div class="pin-dots">
-      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
     </div>
     <div class="pin-pad">
       <button class="pk" onclick="pk('1')">1</button>
@@ -163,23 +199,38 @@ textarea.form-inp{resize:vertical;min-height:70px}
       <button class="pk" onclick="pk('7')">7</button>
       <button class="pk" onclick="pk('8')">8</button>
       <button class="pk" onclick="pk('9')">9</button>
-      <button class="pk sm" onclick="pkCancel()">← zurück</button>
+      <div class="pk ghost"></div>
       <button class="pk" onclick="pk('0')">0</button>
-      <button class="pk sm" onclick="pkDel()">⌫</button>
+      <button class="pk icon-pk" onclick="pkDel()">
+        <svg viewBox="0 0 24 24"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+      </button>
     </div>
     <div class="pin-err" id="pinErr">Falscher PIN — bitte erneut versuchen</div>
   </div>
 </div>
 
-<!-- ─── APP ──────────────────────────────────────────── -->
+<!-- ─── APP ────────────────────────────────────────────────── -->
 <div id="appScreen">
   <div class="app-hdr">
-    <div>
-      <div class="app-hdr-name" id="appName"></div>
-      <div class="app-hdr-sub" id="appSub"></div>
+    <div class="app-hdr-left">
+      <div class="app-av" id="appAv"></div>
+      <div>
+        <div class="app-hdr-name" id="appName"></div>
+        <div class="app-hdr-sub" id="appSub"></div>
+      </div>
     </div>
-    <button class="app-logout-btn" onclick="logout()">Abmelden</button>
+    <button class="app-logout" onclick="logout()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Abmelden
+    </button>
   </div>
+
+  <div class="app-body">
+    <div id="tabAufgaben"></div>
+    <div id="tabWochenzettel" style="display:none"></div>
+    <div id="tabUrlaub" style="display:none"></div>
+  </div>
+
   <div class="tab-bar">
     <button class="tab-btn on" data-t="aufgaben" onclick="switchTab('aufgaben')">
       <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -194,11 +245,6 @@ textarea.form-inp{resize:vertical;min-height:70px}
       Urlaub
     </button>
   </div>
-  <div class="app-body">
-    <div id="tabAufgaben"></div>
-    <div id="tabWochenzettel" style="display:none"></div>
-    <div id="tabUrlaub" style="display:none"></div>
-  </div>
 </div>
 
 <div id="toast"></div>
@@ -211,32 +257,47 @@ const _KEY='sb_publishable_oDrA0qJ2tHdKi9t4JX8OeQ_-5WZeAAh';
 const _sb=supabase.createClient(_URL,_KEY);
 
 let _ma=null,_maList=[],_selId=null,_pinBuf='';
-let _aufgaben=[],_wzCache=[],_wocheOff=0,_urlaubList=[],_einst={};
+let _aufgaben=[],_wzCache=[],_wocheOff=0,_urlaubList=[],_krankList=[],_einst={};
 let _curTab='aufgaben';
 
-// ─── INIT ────────────────────────────────────────────────
+const ICO_CHK=`<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+const ICO_CHEV_L=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
+const ICO_CHEV_R=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
+
+// ─── INIT ────────────────────────────────────────────────────
 async function init(){
   const saved=sessionStorage.getItem('diekjobst_ma');
   if(saved){try{_ma=JSON.parse(saved);}catch(e){}}
   if(_ma){await loadData();showApp();return;}
-  const{data,error}=await _sb.from('mitarbeiter').select('*').eq('aktiv',true).order('name');
+  const{data}=await _sb.from('mitarbeiter').select('*').eq('aktiv',true).order('name');
   _maList=data||[];
   renderMaBtns();
 }
 
+function initials(name){return(name||'').split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);}
+
 function renderMaBtns(){
   const g=document.getElementById('maGrid');
   if(!_maList.length){
-    g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:20px">Keine Mitarbeiter hinterlegt.<br>Bitte im Management anlegen.</div>';
+    g.innerHTML=`<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:28px">Keine Mitarbeiter angelegt.</div>`;
     return;
   }
-  g.innerHTML=_maList.map(m=>`<button class="ma-btn" onclick="selMa('${m.id}')">${esc(m.name)}</button>`).join('');
+  g.innerHTML=_maList.map(m=>`
+    <button class="ma-btn" onclick="selMa('${m.id}')">
+      <div class="ma-avatar">${esc(initials(m.name))}</div>
+      <div class="ma-name">${esc(m.name)}</div>
+    </button>`).join('');
 }
 
 function selMa(id){
   _selId=id;_pinBuf='';
   const m=_maList.find(x=>x.id===id);
-  document.querySelectorAll('.ma-btn').forEach(b=>b.classList.toggle('sel',b.textContent===m.name));
+  document.querySelectorAll('.ma-btn').forEach(b=>b.classList.remove('sel'));
+  event?.currentTarget?.classList.add('sel');
+  // re-query since innerHTML was rebuilt
+  document.querySelectorAll('.ma-btn').forEach(b=>{
+    if(b.querySelector('.ma-name')?.textContent===m.name)b.classList.add('sel');
+  });
   document.getElementById('pinName').textContent='PIN für '+m.name;
   document.getElementById('pinSection').style.display='flex';
   document.getElementById('stepLabel').textContent='PIN eingeben';
@@ -244,11 +305,7 @@ function selMa(id){
   updDots();
 }
 
-function pk(d){
-  if(_pinBuf.length>=4)return;
-  _pinBuf+=d;updDots();
-  if(_pinBuf.length===4)checkPin();
-}
+function pk(d){if(_pinBuf.length>=4)return;_pinBuf+=d;updDots();if(_pinBuf.length===4)checkPin();}
 function pkDel(){_pinBuf=_pinBuf.slice(0,-1);updDots();}
 function pkCancel(){
   _selId=null;_pinBuf='';
@@ -267,8 +324,7 @@ async function checkPin(){
   if(_pinBuf===m.pin){
     _ma=m;
     sessionStorage.setItem('diekjobst_ma',JSON.stringify(m));
-    await loadData();
-    showApp();
+    await loadData();showApp();
   } else {
     _pinBuf='';updDots();
     const e=document.getElementById('pinErr');
@@ -277,31 +333,32 @@ async function checkPin(){
   }
 }
 
-// ─── DATA ────────────────────────────────────────────────
+// ─── DATA ────────────────────────────────────────────────────
 async function loadData(){
-  const[{data:af},{data:wz},{data:ul},{data:es}]=await Promise.all([
+  const[{data:af},{data:wz},{data:ul},{data:kr},{data:es}]=await Promise.all([
     _sb.from('aufgaben').select('*').order('created_at',{ascending:false}),
     _sb.from('wochenzettel').select('*').eq('mitarbeiter_id',_ma.id).order('woche_start',{ascending:false}),
     _sb.from('urlaub').select('*').eq('mitarbeiter_id',_ma.id).order('created_at',{ascending:false}),
+    _sb.from('krank').select('*').eq('mitarbeiter_id',_ma.id).order('von_datum',{ascending:false}),
     _sb.from('einstellungen').select('*')
   ]);
-  _aufgaben=af||[];_wzCache=wz||[];_urlaubList=ul||[];
+  _aufgaben=af||[];_wzCache=wz||[];_urlaubList=ul||[];_krankList=kr||[];
   _einst={};(es||[]).forEach(e=>{_einst[e.key]=e.value;});
 }
 
-// ─── APP ─────────────────────────────────────────────────
+// ─── APP ─────────────────────────────────────────────────────
 function showApp(){
   document.getElementById('loginScreen').style.display='none';
-  const app=document.getElementById('appScreen');
-  app.style.display='flex';
-  document.getElementById('appName').textContent='Hallo, '+(_ma.name.split(' ')[0])+' 👋';
+  document.getElementById('appScreen').style.display='flex';
+  document.getElementById('appName').textContent='Hallo, '+_ma.name.split(' ')[0];
   document.getElementById('appSub').textContent=fmtDate(new Date().toISOString().slice(0,10))+' · Tappendorf';
+  document.getElementById('appAv').textContent=initials(_ma.name);
   renderTab(_curTab);
 }
 
 function logout(){
   sessionStorage.removeItem('diekjobst_ma');
-  _ma=null;_pinBuf='';_selId=null;
+  _ma=null;_pinBuf='';_selId=null;_wocheOff=0;_curTab='aufgaben';
   document.getElementById('appScreen').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
   pkCancel();init();
@@ -311,43 +368,44 @@ function switchTab(t){
   _curTab=t;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   ['aufgaben','wochenzettel','urlaub'].forEach(n=>{
-    const cap=n.charAt(0).toUpperCase()+n.slice(1);
-    document.getElementById('tab'+cap).style.display=n===t?'block':'none';
+    document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===t?'block':'none';
   });
   renderTab(t);
 }
-
 function renderTab(t){
   if(t==='aufgaben')renderAufgaben();
   else if(t==='wochenzettel')renderWochenzettel();
   else if(t==='urlaub')renderUrlaub();
 }
 
-// ─── AUFGABEN ────────────────────────────────────────────
+// ─── AUFGABEN ────────────────────────────────────────────────
 function renderAufgaben(){
   const open=_aufgaben.filter(a=>a.status==='offen');
   const done=_aufgaben.filter(a=>a.status==='erledigt');
-  const prioBadge=p=>{const m={hoch:'p-hoch',normal:'p-normal',niedrig:'p-niedrig'};return`<span class="prio ${m[p]||'p-normal'}">${p||'normal'}</span>`;};
-  const checkIcon=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-  const taskRow=(a,isDone)=>`
+  const prioBadge=p=>{
+    const cls={hoch:'p-hoch',normal:'p-normal',niedrig:'p-niedrig'};
+    const lbl={hoch:'Hoch',normal:'Normal',niedrig:'Niedrig'};
+    return`<span class="prio ${cls[p]||'p-normal'}">${lbl[p]||'Normal'}</span>`;
+  };
+  const chkIcon=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const row=(a,isDone)=>`
     <div class="task">
-      <div class="task-cb${isDone?' done':''}" onclick="toggleTask('${a.id}')">${isDone?checkIcon:''}</div>
+      <div class="task-cb${isDone?' done':''}" onclick="toggleTask('${a.id}')">${isDone?chkIcon:''}</div>
       <div style="flex:1;min-width:0">
         <div class="task-title${isDone?' done':''}">${esc(a.titel)}</div>
         ${a.beschreibung?`<div class="task-desc">${esc(a.beschreibung)}</div>`:''}
         ${!isDone?prioBadge(a.prioritaet):''}
-        ${isDone&&a.erledigt_von?`<div class="done-info">Erledigt am ${fmtDate(a.erledigt_am?.slice(0,10))} · ${esc(a.erledigt_von)}</div>`:''}
+        ${isDone&&a.erledigt_von?`<div class="done-info"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>${esc(a.erledigt_von)} · ${fmtDate(a.erledigt_am?.slice(0,10))}</div>`:''}
       </div>
     </div>`;
   let h='';
   if(open.length){
-    h+=`<div class="card"><div class="card-hdr">Offene Aufgaben <span class="count">${open.length}</span></div>${open.map(a=>taskRow(a,false)).join('')}</div>`;
+    h+=`<div class="card"><div class="card-hdr">Offene Aufgaben <span class="cnt">${open.length}</span></div>${open.map(a=>row(a,false)).join('')}</div>`;
   } else {
-    h+=`<div class="card"><div class="card-hdr">Offene Aufgaben <span class="count">0</span></div><div class="empty">Keine offenen Aufgaben — weiter so! 🎉</div></div>`;
+    h+=`<div class="card"><div class="card-hdr">Offene Aufgaben <span class="cnt">0</span></div><div class="empty"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11"/></svg><span class="empty-txt">Keine offenen Aufgaben</span></div></div>`;
   }
   if(done.length){
-    const show=done.slice(0,5);
-    h+=`<div class="card"><div class="card-hdr">Erledigt <span class="count">${done.length}</span></div>${show.map(a=>taskRow(a,true)).join('')}${done.length>5?`<div style="text-align:center;padding-top:8px;font-size:12px;color:var(--muted)">+ ${done.length-5} weitere</div>`:''}</div>`;
+    h+=`<div class="card"><div class="card-hdr">Erledigt <span class="cnt">${done.length}</span></div>${done.slice(0,5).map(a=>row(a,true)).join('')}${done.length>5?`<div style="text-align:center;padding-top:10px;font-size:12px;color:var(--muted)">+ ${done.length-5} weitere</div>`:''}</div>`;
   }
   document.getElementById('tabAufgaben').innerHTML=h;
 }
@@ -359,20 +417,12 @@ async function toggleTask(id){
   const{error}=await _sb.from('aufgaben').update({status:'erledigt',erledigt_von:_ma.name,erledigt_am:now}).eq('id',id);
   if(error){toast('Fehler: '+error.message);return;}
   a.status='erledigt';a.erledigt_von=_ma.name;a.erledigt_am=now;
-  renderAufgaben();toast('Aufgabe erledigt ✓');
+  renderAufgaben();toast('Aufgabe erledigt');
 }
 
-// ─── WOCHENZETTEL ────────────────────────────────────────
-function getMonday(off=0){
-  const n=new Date(),day=n.getDay()||7,m=new Date(n);
-  m.setDate(n.getDate()-(day-1)+off*7);m.setHours(0,0,0,0);return m;
-}
-function getKW(d){
-  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
-  const dn=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-dn);
-  const ys=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
-  return Math.ceil((((dt-ys)/86400000)+1)/7);
-}
+// ─── WOCHENZETTEL ────────────────────────────────────────────
+function getMonday(off=0){const n=new Date(),day=n.getDay()||7,m=new Date(n);m.setDate(n.getDate()-(day-1)+off*7);m.setHours(0,0,0,0);return m;}
+function getKW(d){const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-dn);const ys=new Date(Date.UTC(dt.getUTCFullYear(),0,1));return Math.ceil((((dt-ys)/86400000)+1)/7);}
 function fmtDate(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}.${m}.${y}`;}
 function fmtShort(d){return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.`;}
 
@@ -384,9 +434,22 @@ function renderWochenzettel(){
   let sheet=_wzCache.find(w=>w.woche_start===monStr)||{
     mitarbeiter_id:_ma.id,woche_start:monStr,kw,jahr:year,
     mo_std:0,di_std:0,mi_std:0,do_std:0,fr_std:0,sa_std:0,
+    mo_pause:0,di_pause:0,mi_pause:0,do_pause:0,fr_pause:0,sa_pause:0,
     mo_bem:'',di_bem:'',mi_bem:'',do_bem:'',fr_bem:'',sa_bem:'',status:'entwurf'
   };
   const locked=sheet.status==='eingereicht';
+  // Pre-fill approved vacation and sick days
+  if(!locked){
+    const dayKeys=['mo','di','mi','do','fr','sa'];
+    dayKeys.forEach((k,i)=>{
+      if(sheet[k+'_bem'])return;
+      const dateStr=new Date(mon.getTime()+i*86400000).toISOString().slice(0,10);
+      const hasUrlaub=_urlaubList.some(u=>u.status==='genehmigt'&&u.von_datum<=dateStr&&u.bis_datum>=dateStr);
+      if(hasUrlaub){sheet[k+'_bem']='Urlaub';return;}
+      const hasKrank=_krankList.some(k2=>k2.von_datum<=dateStr&&k2.bis_datum>=dateStr);
+      if(hasKrank)sheet[k+'_bem']='Krank';
+    });
+  }
   const days=[
     {k:'mo',l:'Mo',d:mon},
     {k:'di',l:'Di',d:new Date(mon.getTime()+86400000)},
@@ -395,75 +458,133 @@ function renderWochenzettel(){
     {k:'fr',l:'Fr',d:new Date(mon.getTime()+4*86400000)},
     {k:'sa',l:'Sa',d:new Date(mon.getTime()+5*86400000)},
   ];
-  const total=days.reduce((s,d)=>s+(parseFloat(sheet[d.k+'_std'])||0),0);
-  const badgeHtml=locked?`<span class="badge b-eingereicht">✓ Eingereicht</span>`:`<span class="badge b-entwurf">Entwurf</span>`;
-  const daysHtml=days.map(({k,l,d})=>`
+  const brutto=days.reduce((s,d)=>s+(parseFloat(sheet[d.k+'_std'])||0),0);
+  const pauseMin=days.reduce((s,d)=>s+(parseInt(sheet[d.k+'_pause'])||0),0);
+  const netto=Math.max(0,brutto-pauseMin/60);
+  const badge=locked
+    ?`<span class="badge b-eingereicht">${ICO_CHK}Eingereicht</span>`
+    :`<span class="badge b-entwurf">Entwurf</span>`;
+  const daysHtml=`
+    <div class="day-col-hdr"><span></span><span>Std</span><span>Pause</span><span>Status</span></div>
+    `+days.map(({k,l,d})=>`
     <div class="day-row">
       <div class="day-lbl">${l}<div class="day-date">${fmtShort(d)}</div></div>
       <input type="number" class="day-std" id="wz_${k}_std" value="${parseFloat(sheet[k+'_std'])||0}" min="0" max="24" step="0.5" ${locked?'readonly':''} oninput="updTotal()">
-      <input type="text" class="day-bem" id="wz_${k}_bem" value="${esc(sheet[k+'_bem']||'')}" placeholder="Bemerkung…" ${locked?'readonly':''}>
+      <input type="number" class="day-pause" id="wz_${k}_pause" value="${parseInt(sheet[k+'_pause'])||0}" min="0" max="120" step="5" ${locked?'readonly':''} oninput="updTotal()">
+      <select class="day-bem" id="wz_${k}_bem" ${locked?'disabled':''}>
+        <option value="">–</option>
+        <option value="Urlaub"${sheet[k+'_bem']==='Urlaub'?' selected':''}>Urlaub</option>
+        <option value="Krank"${sheet[k+'_bem']==='Krank'?' selected':''}>Krank</option>
+      </select>
     </div>`).join('');
-
   const histItems=_wzCache.filter(w=>w.status==='eingereicht'&&w.woche_start!==monStr).slice(0,6).map(w=>{
-    const t=days.map(d=>d.k).reduce((s,k)=>s+(parseFloat(w[k+'_std'])||0),0);
+    const b=days.reduce((s,d)=>s+(parseFloat(w[d.k+'_std'])||0),0);
+    const p=days.reduce((s,d)=>s+(parseInt(w[d.k+'_pause'])||0),0);
+    const n=Math.max(0,b-p/60);
     return`<div class="wz-hist-item">
-      <div><div style="font-size:13px;font-weight:600;color:var(--navy)">KW ${w.kw} · ${w.jahr}</div>
-      <div style="font-size:11.5px;color:var(--muted);margin-top:1px">${fmtDate(w.woche_start)}</div></div>
-      <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--navy)">${t.toFixed(1).replace('.',',')} Std</div><span class="badge b-eingereicht">Eingereicht</span></div>
+      <div><div style="font-size:13.5px;font-weight:700;color:var(--navy)">KW ${w.kw} · ${w.jahr}</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${fmtDate(w.woche_start)}</div></div>
+      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        <div style="font-size:14px;font-weight:700;color:var(--navy)">${n.toFixed(1).replace('.',',')} Std <span style="font-size:11px;color:var(--muted);font-weight:500">netto</span></div>
+        <span class="badge b-eingereicht">${ICO_CHK}Eingereicht</span>
+      </div>
     </div>`;}).join('');
 
   document.getElementById('tabWochenzettel').innerHTML=`
     <div class="card">
       <div class="wk-nav">
-        <button class="wk-nav-btn" onclick="navWoche(-1)">‹</button>
+        <button class="wk-nav-btn" onclick="navWoche(-1)">${ICO_CHEV_L}</button>
         <div>
-          <div class="wk-lbl">KW ${kw} · ${year} &nbsp;${badgeHtml}</div>
+          <div class="wk-lbl" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">KW ${kw} · ${year} ${badge}</div>
           <div class="wk-sub">${fmtShort(mon)} – ${fmtShort(sun)}${year}</div>
         </div>
-        <button class="wk-nav-btn" onclick="navWoche(1)" ${_wocheOff>=0?'disabled':''}>›</button>
+        <button class="wk-nav-btn" onclick="navWoche(1)" ${_wocheOff>=0?'disabled':''}>${ICO_CHEV_R}</button>
       </div>
       ${daysHtml}
       <div class="wk-total">
-        <div class="wk-total-lbl">Gesamtstunden</div>
-        <div class="wk-total-val" id="wkTotal">${total.toFixed(1).replace('.',',')} Std</div>
+        <div><div class="wk-total-lbl">Brutto</div><div class="wk-total-val" id="wkTotal">${brutto.toFixed(1).replace('.',',')} Std</div></div>
+        <div style="text-align:right"><div class="wk-total-lbl">Pause</div><div style="font-size:16px;font-weight:700;color:var(--muted)" id="wkPause">${pauseMin} Min</div></div>
+      </div>
+      <div class="wk-netto">
+        <div class="wk-netto-lbl">Netto-Stunden</div>
+        <div class="wk-netto-val" id="wkNetto">${netto.toFixed(1).replace('.',',')} Std</div>
       </div>
       ${!locked?`
         <div class="btn-row">
-          <button class="btn-sec" style="flex:1" onclick="saveWz(false)">Speichern</button>
-          <button class="btn-main" style="flex:2" onclick="saveWz(true)">Einreichen ✓</button>
+          <button class="btn-sec" style="flex:1" onclick="saveWz(false)">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Speichern
+          </button>
+          <button class="btn-main" style="flex:2" onclick="saveWz(true)">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            Einreichen
+          </button>
         </div>
-      `:`<div style="text-align:center;font-size:12px;color:var(--muted);padding:6px">Eingereicht am ${fmtDate(sheet.submitted_at?.slice(0,10))} — schreibgeschützt.</div>`}
+      `:`<div style="text-align:center;font-size:12px;color:var(--muted);padding:6px 0">Eingereicht${sheet.submitted_at?' am '+fmtDate(sheet.submitted_at?.slice(0,10)):''} — schreibgeschützt</div>`}
     </div>
     ${histItems?`<div class="card"><div class="card-hdr">Eingereichte Wochen</div>${histItems}</div>`:''}`;
 }
 
 function updTotal(){
   const keys=['mo','di','mi','do','fr','sa'];
-  const t=keys.reduce((s,k)=>s+(parseFloat(document.getElementById('wz_'+k+'_std')?.value)||0),0);
-  const el=document.getElementById('wkTotal');if(el)el.textContent=t.toFixed(1).replace('.',',')+' Std';
+  const brutto=keys.reduce((s,k)=>s+(parseFloat(document.getElementById('wz_'+k+'_std')?.value)||0),0);
+  const pauseMin=keys.reduce((s,k)=>s+(parseInt(document.getElementById('wz_'+k+'_pause')?.value)||0),0);
+  const netto=Math.max(0,brutto-pauseMin/60);
+  const el1=document.getElementById('wkTotal');if(el1)el1.textContent=brutto.toFixed(1).replace('.',',')+' Std';
+  const el2=document.getElementById('wkPause');if(el2)el2.textContent=pauseMin+' Min';
+  const el3=document.getElementById('wkNetto');if(el3)el3.textContent=netto.toFixed(1).replace('.',',')+' Std';
 }
 
 async function saveWz(submit){
-  const mon=getMonday(_wocheOff);
-  const monStr=mon.toISOString().slice(0,10);
+  const mon=getMonday(_wocheOff),monStr=mon.toISOString().slice(0,10);
   const keys=['mo','di','mi','do','fr','sa'];
   const data={mitarbeiter_id:_ma.id,woche_start:monStr,kw:getKW(mon),jahr:mon.getFullYear(),status:submit?'eingereicht':'entwurf'};
   if(submit)data.submitted_at=new Date().toISOString();
   keys.forEach(k=>{
     data[k+'_std']=parseFloat(document.getElementById('wz_'+k+'_std')?.value)||0;
+    data[k+'_pause']=parseInt(document.getElementById('wz_'+k+'_pause')?.value)||0;
     data[k+'_bem']=document.getElementById('wz_'+k+'_bem')?.value||'';
   });
   const{data:res,error}=await _sb.from('wochenzettel').upsert(data,{onConflict:'mitarbeiter_id,woche_start'}).select().single();
   if(error){toast('Fehler: '+error.message);return;}
   const idx=_wzCache.findIndex(w=>w.woche_start===monStr);
   if(idx>=0)_wzCache[idx]=res;else _wzCache.unshift(res);
-  toast(submit?'Wochenzettel eingereicht ✓':'Entwurf gespeichert');
+
+  if(submit){
+    // Auto-create Krank/Urlaub entries from dropdown selections
+    const dayDates=[
+      {k:'mo',date:mon.toISOString().slice(0,10)},
+      {k:'di',date:new Date(mon.getTime()+86400000).toISOString().slice(0,10)},
+      {k:'mi',date:new Date(mon.getTime()+2*86400000).toISOString().slice(0,10)},
+      {k:'do',date:new Date(mon.getTime()+3*86400000).toISOString().slice(0,10)},
+      {k:'fr',date:new Date(mon.getTime()+4*86400000).toISOString().slice(0,10)},
+      {k:'sa',date:new Date(mon.getTime()+5*86400000).toISOString().slice(0,10)},
+    ];
+    const notiz=`Wochenzettel KW ${getKW(mon)}/${mon.getFullYear()}`;
+    const groups=[];let cur=null;
+    dayDates.forEach(({k,date})=>{
+      const bem=data[k+'_bem'];
+      if(bem==='Urlaub'||bem==='Krank'){
+        if(cur&&cur.type===bem){cur.bis=date;cur.count++;}
+        else{cur={type:bem,von:date,bis:date,count:1};groups.push(cur);}
+      }else{cur=null;}
+    });
+    for(const g of groups){
+      if(g.type==='Urlaub'){
+        await _sb.from('urlaub').insert({mitarbeiter_id:_ma.id,von_datum:g.von,bis_datum:g.bis,arbeitstage:g.count,jahr:mon.getFullYear(),status:'genehmigt',notiz});
+      }else if(g.type==='Krank'){
+        await _sb.from('krank').insert({mitarbeiter_id:_ma.id,von_datum:g.von,bis_datum:g.bis,tage:g.count,notiz});
+      }
+    }
+  }
+
+  toast(submit?'Wochenzettel eingereicht':'Entwurf gespeichert');
   renderWochenzettel();
 }
 
 function navWoche(d){if(_wocheOff+d>0)return;_wocheOff+=d;renderWochenzettel();}
 
-// ─── URLAUB ──────────────────────────────────────────────
+// ─── URLAUB ──────────────────────────────────────────────────
 function calcAT(von,bis){
   if(!von||!bis)return 0;
   const s=new Date(von+'T00:00:00'),e=new Date(bis+'T00:00:00');
@@ -476,10 +597,9 @@ function calcAT(von,bis){
 function renderUrlaub(){
   const yr=new Date().getFullYear();
   const genommen=_urlaubList.filter(u=>u.status==='genehmigt'&&u.jahr===yr).reduce((s,u)=>s+(u.arbeitstage||0),0);
-  const anspruch=_ma.urlaub_anspruch||24;
-  const vorjahr=_ma.urlaub_vorjahr||0;
-  const offen=anspruch+vorjahr-genommen;
-  const statusMap={beantragt:'Beantragt',genehmigt:'Genehmigt',abgelehnt:'Abgelehnt'};
+  const anspruch=_ma.urlaub_anspruch||24,vorjahr=_ma.urlaub_vorjahr||0,offen=anspruch+vorjahr-genommen;
+  const sMap={beantragt:'Beantragt',genehmigt:'Genehmigt',abgelehnt:'Abgelehnt'};
+  const sCls={beantragt:'b-beantragt',genehmigt:'b-genehmigt',abgelehnt:'b-abgelehnt'};
   document.getElementById('tabUrlaub').innerHTML=`
     <div class="card">
       <div class="card-hdr">Urlaubskonto ${yr}</div>
@@ -500,12 +620,15 @@ function renderUrlaub(){
         <label class="form-lbl">Bis</label>
         <input type="date" class="form-inp" id="ulBis" oninput="updAT()">
       </div>
-      <div class="arb-hint" id="arbHint"></div>
-      <div class="form-row" style="margin-top:12px">
+      <div id="arbHint" class="arb-hint" style="display:none"></div>
+      <div class="form-row" style="margin-top:14px">
         <label class="form-lbl">Notiz (optional)</label>
         <textarea class="form-inp" id="ulNotiz" placeholder="z.B. Familienurlaub…" rows="2"></textarea>
       </div>
-      <button class="btn-main" id="ulBtn" onclick="submitUrlaub()" disabled>Urlaub beantragen</button>
+      <button class="btn-main" id="ulBtn" onclick="submitUrlaub()" disabled>
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Urlaub beantragen
+      </button>
     </div>
     ${_urlaubList.length?`
     <div class="card">
@@ -514,10 +637,10 @@ function renderUrlaub(){
         <div class="ur-row">
           <div>
             <div class="ur-dates">${fmtDate(u.von_datum)} – ${fmtDate(u.bis_datum)}</div>
-            <div class="ur-tage">${u.arbeitstage} Arbeitstag${u.arbeitstage!==1?'e':''}${u.jahr?` · ${u.jahr}`:''}</div>
+            <div class="ur-tage">${u.arbeitstage} Arbeitstag${u.arbeitstage!==1?'e':''}${u.jahr?' · '+u.jahr:''}</div>
             ${u.notiz?`<div class="ur-notiz">${esc(u.notiz)}</div>`:''}
           </div>
-          <span class="badge b-${u.status}">${statusMap[u.status]||u.status}</span>
+          <span class="badge ${sCls[u.status]||'b-entwurf'}">${u.status==='genehmigt'?ICO_CHK:''}${sMap[u.status]||u.status}</span>
         </div>`).join('')}
     </div>`:''}`;
 }
@@ -529,8 +652,13 @@ function updAT(){
   const btn=document.getElementById('ulBtn');
   if(von&&bis){
     const t=calcAT(von,bis);
-    if(t>0){hint.textContent=`${t} Arbeitstag${t!==1?'e':''} (Mo–Fr)`;hint.className='arb-hint ok';hint.style.display='block';btn.disabled=false;}
-    else{hint.textContent='Ungültiger Zeitraum';hint.className='arb-hint err';hint.style.display='block';btn.disabled=true;}
+    if(t>0){
+      hint.innerHTML=`<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>${t} Arbeitstag${t!==1?'e':''} (Mo–Fr)`;
+      hint.className='arb-hint ok';hint.style.display='flex';btn.disabled=false;
+    } else {
+      hint.innerHTML=`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Ungültiger Zeitraum`;
+      hint.className='arb-hint err';hint.style.display='flex';btn.disabled=true;
+    }
   } else {hint.style.display='none';btn.disabled=true;}
 }
 
@@ -543,11 +671,11 @@ async function submitUrlaub(){
   const yr=new Date(von+'T00:00:00').getFullYear();
   const btn=document.getElementById('ulBtn');btn.disabled=true;btn.textContent='Wird eingereicht…';
   const{data,error}=await _sb.from('urlaub').insert({mitarbeiter_id:_ma.id,von_datum:von,bis_datum:bis,arbeitstage:at,notiz,jahr:yr,status:'beantragt'}).select().single();
-  if(error){toast('Fehler: '+error.message);btn.disabled=false;btn.textContent='Urlaub beantragen';return;}
+  if(error){toast('Fehler: '+error.message);btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Urlaub beantragen';return;}
   _urlaubList.unshift(data);
   const sent=await sendEmail(von,bis,at,notiz);
   if(sent)await _sb.from('urlaub').update({email_gesendet:true}).eq('id',data.id);
-  toast('Antrag eingereicht'+(sent?' — Chef wurde informiert ✉':''));
+  toast('Antrag eingereicht'+(sent?' — Vorgesetzter informiert':''));
   renderUrlaub();
 }
 
@@ -561,7 +689,7 @@ async function sendEmail(von,bis,at,notiz){
   }catch(e){console.error('EmailJS:',e);return false;}
 }
 
-// ─── UTILS ───────────────────────────────────────────────
+// ─── UTILS ───────────────────────────────────────────────────
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function toast(msg,dur=2600){
   const t=document.getElementById('toast');

@@ -8890,21 +8890,25 @@ function renderStdDocTabContent(tab){
     <div id="stdDocSubEmpty-${tab}" style="color:var(--muted);font-size:13px;text-align:center;padding:24px;background:var(--bg);border-radius:8px;display:none">Noch keine Dokumente in diesem Bereich.</div>`;
 }
 let _stdPersonalTab='uebersicht';
-let _maCache=[],_aufgabenCache=[],_wzMgmtCache=[],_urlaubMgmtCache=[],_einstCache={};
+let _maCache=[],_aufgabenCache=[],_wzMgmtCache=[],_urlaubMgmtCache=[],_einstCache={},_krankCache=[];
+const _wzY=new Date().getFullYear();
+let _wzFilter={maId:null,von:null,bis:null},_wzDetailId=null,_wzChartYear=new Date().getFullYear(),_wzChartMaId=null;
 async function renderStdPersonalTab(){
   const cont=document.getElementById('stdPersonalContent');
   if(!cont)return;
-  await loadPersonalData(_stdDetailId);
+  cont.innerHTML='<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">Lade…</div>';
+  try{await loadPersonalData(_stdDetailId);}catch(e){console.error('Personal load error:',e);}
   _renderPersonalLayout(cont);
   _renderPersonalSubTab(_stdPersonalTab);
 }
 
 async function loadPersonalData(standortId){
-  const[{data:ma},{data:af},{data:wz},{data:ul},{data:es}]=await Promise.all([
+  const[{data:ma},{data:af},{data:wz},{data:ul},{data:kr},{data:es}]=await Promise.all([
     _sb.from('mitarbeiter').select('*').eq('standort_id',standortId).eq('aktiv',true).order('name'),
     _sb.from('aufgaben').select('*').eq('standort_id',standortId).order('created_at',{ascending:false}),
-    _sb.from('wochenzettel').select('*,mitarbeiter(name)').order('woche_start',{ascending:false}),
-    _sb.from('urlaub').select('*,mitarbeiter(name)').order('created_at',{ascending:false}),
+    _sb.from('wochenzettel').select('*').order('woche_start',{ascending:false}),
+    _sb.from('urlaub').select('*').order('created_at',{ascending:false}),
+    _sb.from('krank').select('*').order('von_datum',{ascending:false}),
     _sb.from('einstellungen').select('*')
   ]);
   _maCache=ma||[];
@@ -8912,7 +8916,8 @@ async function loadPersonalData(standortId){
   const maIds=new Set(_maCache.map(m=>m.id));
   _wzMgmtCache=(wz||[]).filter(w=>maIds.has(w.mitarbeiter_id));
   _urlaubMgmtCache=(ul||[]).filter(u=>maIds.has(u.mitarbeiter_id));
-  _einstCache={};(es||[]).forEach(e=>{_einstCache[e.key]=e.value;});
+  _krankCache=(kr||[]).filter(k=>maIds.has(k.mitarbeiter_id));
+  _einstCache={};(es||[]).forEach(e=>{_einstCache[e.key]=typeof e.value==='object'?JSON.stringify(e.value).replace(/^"|"$/g,''):String(e.value||'');});
 }
 
 function _renderPersonalLayout(cont){
@@ -8957,8 +8962,8 @@ function _persUebersicht(){
   const yr=new Date().getFullYear();
   const thisWeekMon=_persGetMonday(0);
   const wzThisWeek=_wzMgmtCache.filter(w=>w.woche_start===thisWeekMon&&w.status==='eingereicht').length;
-  const kpiCard=(val,lbl,icon,color='var(--navy)')=>`
-    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+  const kpiCard=(val,lbl,icon,color='var(--navy)',tab=null)=>`
+    <div onclick="${tab?`_renderPersonalSubTab('${tab}')`:''}" style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px${tab?';cursor:pointer;transition:box-shadow .15s':''}">
       <div style="width:38px;height:38px;background:${color}18;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${icon}</div>
       <div><div style="font-size:22px;font-weight:700;color:${color};line-height:1">${val}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${lbl}</div></div>
     </div>`;
@@ -8967,10 +8972,10 @@ function _persUebersicht(){
     Mitarbeiter-Portal öffnen</a>`;
   return`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      ${kpiCard(_maCache.length,'Aktive Mitarbeiter',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`)}
-      ${kpiCard(offeneAf,'Offene Aufgaben',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${offeneAf>0?'#ea580c':'var(--navy)'}" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,offeneAf>0?'#ea580c':'var(--navy)')}
-      ${kpiCard(wzThisWeek,'Wochenzettel (diese Woche)',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`)}
-      ${kpiCard(pendUrlaub,'Offene Urlaubsanträge',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${pendUrlaub>0?'#dc2626':'var(--navy)'}" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>`,pendUrlaub>0?'#dc2626':'var(--navy)')}
+      ${kpiCard(_maCache.length,'Aktive Mitarbeiter',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,'var(--navy)','mitarbeiter')}
+      ${kpiCard(offeneAf,'Offene Aufgaben',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${offeneAf>0?'#ea580c':'var(--navy)'}" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,offeneAf>0?'#ea580c':'var(--navy)','aufgaben')}
+      ${kpiCard(wzThisWeek,'Wochenzettel (diese Woche)',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,'var(--navy)','wochenzettel')}
+      ${kpiCard(pendUrlaub,'Offene Urlaubsanträge',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${pendUrlaub>0?'#dc2626':'var(--navy)'}" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>`,pendUrlaub>0?'#dc2626':'var(--navy)','urlaub')}
     </div>
     <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Mitarbeiter-Portal</div>
@@ -9095,7 +9100,13 @@ function _persAufgaben(){
       <div style="padding:10px 0 0;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Offen (${open.length})</div>
       ${open.map(row).join('')}</div>`:''}
     ${done.length?`<div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:0 16px">
-      <div style="padding:10px 0 0;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Erledigt (${done.length})</div>
+      <div style="padding:10px 0 0;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Erledigt (${done.length})</div>
+        <button onclick="deleteAllDoneAufgaben()" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:4px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Alle löschen
+        </button>
+      </div>
       ${done.slice(0,10).map(row).join('')}</div>`:''}
     ${!open.length&&!done.length?'<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;font-style:italic">Noch keine Aufgaben angelegt.</div>':''}`;
 }
@@ -9145,6 +9156,17 @@ async function deleteAufgabe(id){
   await loadPersonalData(_stdDetailId);
   _renderPersonalSubTab('aufgaben');
 }
+async function deleteAllDoneAufgaben(){
+  const done=_aufgabenCache.filter(a=>a.status==='erledigt');
+  if(!done.length)return;
+  if(!confirm(`Alle ${done.length} erledigten Aufgaben löschen?`))return;
+  const ids=done.map(a=>a.id);
+  const{error}=await _sb.from('aufgaben').delete().in('id',ids);
+  if(error){toast('Fehler: '+error.message);return;}
+  toast(`${ids.length} Aufgaben gelöscht`);
+  await loadPersonalData(_stdDetailId);
+  _renderPersonalSubTab('aufgaben');
+}
 
 /* ── WOCHENZETTEL ── */
 function _persGetMonday(off=0){
@@ -9152,28 +9174,444 @@ function _persGetMonday(off=0){
   m.setDate(n.getDate()-(day-1)+off*7);m.setHours(0,0,0,0);return m.toISOString().slice(0,10);
 }
 function _persWochenzettel(){
-  const grouped={};
-  _wzMgmtCache.forEach(w=>{
-    const ma=w.mitarbeiter?.name||w.mitarbeiter_id;
-    if(!grouped[ma])grouped[ma]=[];
-    grouped[ma].push(w);
-  });
-  if(!Object.keys(grouped).length)return'<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;font-style:italic">Noch keine Wochenzettel eingereicht.</div>';
   const keys=['mo','di','mi','do','fr','sa'];
-  return`<div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Eingereichte Wochenzettel</div>`+Object.entries(grouped).map(([name,sheets])=>`
-    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden">
-      <div style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--navy)">${h(name)}</div>
-      ${sheets.filter(w=>w.status==='eingereicht').slice(0,8).map(w=>{
-        const t=keys.reduce((s,k)=>s+(parseFloat(w[k+'_std'])||0),0);
-        const bemRows=keys.filter(k=>w[k+'_bem']).map(k=>`<span style="font-size:11px;color:var(--muted)">${k.toUpperCase()}: ${h(w[k+'_bem'])}</span>`);
-        return`<div style="padding:10px 16px;border-bottom:1px solid var(--line)">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-            <div><div style="font-size:12.5px;font-weight:600;color:var(--navy)">KW ${w.kw} · ${w.jahr} &nbsp;<span style="font-size:11px;color:var(--muted)">${_fmtD(w.woche_start)}</span></div>
-            ${bemRows.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">${bemRows.join('')}</div>`:''}</div>
-            <div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700;color:var(--navy)">${t.toFixed(1).replace('.',',')} Std</div>
-            <div style="font-size:10px;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:8px;font-weight:700;margin-top:2px">Eingereicht</div></div>
-          </div></div>`;}).join('')}
-    </div>`).join('');
+  const submitted=_wzMgmtCache.filter(w=>w.status==='eingereicht');
+  if(!submitted.length)return'<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;font-style:italic">Noch keine Wochenzettel eingereicht.</div>';
+
+  // ── Detailansicht ──
+  if(_wzDetailId){
+    const wz=_wzMgmtCache.find(w=>w.id===_wzDetailId);
+    if(!wz)return _persWochenzettelList(submitted,keys);
+    const name=_maCache.find(m=>m.id===wz.mitarbeiter_id)?.name||'–';
+    const dayLabels={mo:'Montag',di:'Dienstag',mi:'Mittwoch',do:'Donnerstag',fr:'Freitag',sa:'Samstag'};
+    const monDate=new Date(wz.woche_start+'T00:00:00');
+    const dayDates={mo:0,di:1,mi:2,do:3,fr:4,sa:5};
+    const brutto=keys.reduce((s,k)=>s+(parseFloat(wz[k+'_std'])||0),0);
+    const pauseMin=keys.reduce((s,k)=>s+(parseInt(wz[k+'_pause'])||0),0);
+    const netto=Math.max(0,brutto-pauseMin/60);
+    const dayRows=keys.map(k=>{
+      const std=parseFloat(wz[k+'_std'])||0;
+      const pause=parseInt(wz[k+'_pause'])||0;
+      const bem=wz[k+'_bem']||'';
+      const active=std>0;
+      const d=new Date(monDate.getTime()+dayDates[k]*86400000);
+      const dateStr=`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+      return`<div style="display:grid;grid-template-columns:110px 52px 52px 1fr;gap:10px;align-items:center;padding:9px 16px;border-bottom:1px solid var(--line);opacity:${active?1:.45}">
+        <div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--navy)">${dayLabels[k]}</div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:1px">${dateStr}</div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--navy);text-align:center">${std?std.toFixed(1).replace('.',',')+'h':'–'}</div>
+        <div style="font-size:12px;color:var(--muted);text-align:center">${pause?pause+'min':'–'}</div>
+        <div style="font-size:12px;color:var(--muted);font-style:${bem?'normal':'italic'}">${bem?h(bem):'–'}</div>
+      </div>`;
+    }).join('');
+    return`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <button onclick="_wzCloseDetail()" style="background:var(--bg);border:1.5px solid var(--line);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:5px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Zurück
+        </button>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--navy)">KW ${wz.kw} · ${wz.jahr}</div>
+          <div style="font-size:11.5px;color:var(--muted)">${h(name)} · ${_fmtD(wz.woche_start)}</div>
+        </div>
+      </div>
+      <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:110px 52px 52px 1fr;gap:10px;padding:8px 16px;background:#f8fafc;border-bottom:1px solid var(--line)">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Tag</div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center">Std</div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center">Pause</div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Bemerkung</div>
+        </div>
+        ${dayRows}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="background:var(--bg);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Brutto</div>
+          <div style="font-size:17px;font-weight:700;color:var(--navy)">${brutto.toFixed(1).replace('.',',')}h</div>
+        </div>
+        <div style="background:var(--bg);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Pause</div>
+          <div style="font-size:17px;font-weight:700;color:var(--muted)">${pauseMin} Min</div>
+        </div>
+        <div style="background:#eff6ff;border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:#1d4ed8;text-transform:uppercase;margin-bottom:4px">Netto</div>
+          <div style="font-size:17px;font-weight:700;color:#1d4ed8">${netto.toFixed(1).replace('.',',')}h</div>
+        </div>
+      </div>`;
+  }
+
+  return _persWochenzettelList(submitted,keys);
+}
+
+function _persWochenzettelList(submitted,keys){
+  const yr=_wzChartYear;
+  const maId=_wzChartMaId;
+  const iS='border:1.5px solid var(--line);border-radius:8px;padding:8px 11px;font-family:var(--sans);font-size:13px;color:var(--navy);outline:none;background:var(--white);width:100%';
+  const maOptsForm='<option value="">– Person wählen –</option>'+_maCache.map(m=>`<option value="${m.id}">${h(m.name)}</option>`).join('');
+  const MO=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+  // Years with actual data
+  const dataYears=[...new Set([
+    ...submitted.map(w=>w.woche_start&&parseInt(w.woche_start.slice(0,4))).filter(Boolean),
+    ..._krankCache.map(k=>k.von_datum&&parseInt(k.von_datum.slice(0,4))).filter(Boolean),
+    ..._urlaubMgmtCache.filter(u=>u.status==='genehmigt').map(u=>u.von_datum&&parseInt(u.von_datum.slice(0,4))).filter(Boolean),
+    new Date().getFullYear()
+  ])].sort();
+
+  // Monthly aggregates (filtered by person)
+  const arbeitStd=Array(12).fill(0);
+  submitted.forEach(w=>{
+    if(!w.woche_start)return;
+    if(maId&&w.mitarbeiter_id!==maId)return;
+    if(parseInt(w.woche_start.slice(0,4))!==yr)return;
+    const m=parseInt(w.woche_start.slice(5,7))-1;
+    const b=keys.reduce((s,k)=>s+(parseFloat(w[k+'_std'])||0),0);
+    const p=keys.reduce((s,k)=>s+(parseInt(w[k+'_pause'])||0),0);
+    arbeitStd[m]+=Math.max(0,b-p/60);
+  });
+  const krankM=Array(12).fill(0);
+  _krankCache.forEach(k=>{
+    if(!k.von_datum||parseInt(k.von_datum.slice(0,4))!==yr)return;
+    if(maId&&k.mitarbeiter_id!==maId)return;
+    krankM[parseInt(k.von_datum.slice(5,7))-1]+=k.tage||0;
+  });
+  const urlaubM=Array(12).fill(0);
+  _urlaubMgmtCache.filter(u=>u.status==='genehmigt').forEach(u=>{
+    if(!u.von_datum||parseInt(u.von_datum.slice(0,4))!==yr)return;
+    if(maId&&u.mitarbeiter_id!==maId)return;
+    urlaubM[parseInt(u.von_datum.slice(5,7))-1]+=u.arbeitstage||0;
+  });
+
+  // Bar chart builder
+  const barChart=(data,color,unit,h2=68)=>{
+    const max=Math.max(...data,0.1);
+    return MO.map((lbl,i)=>{
+      const val=data[i];
+      const bh=val>0?Math.max(4,Math.round((val/max)*h2)):0;
+      const disp=val>0?(unit==='h'?val.toFixed(1).replace('.',','):val):'';
+      return`<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0">
+        <div style="font-size:8.5px;font-weight:700;color:${color};height:13px;display:flex;align-items:flex-end;margin-bottom:2px;line-height:1">${disp}</div>
+        <div style="width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:${h2}px">
+          <div style="width:100%;height:${bh}px;background:${color};border-radius:3px 3px 0 0"></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px;white-space:nowrap">${lbl}</div>
+      </div>`;
+    }).join('');
+  };
+
+  // Person chips
+  const chipBtn=(id,lbl)=>{const act=id===null?!maId:maId===id;return`<button onclick="_wzChartMaId=${id===null?'null':`'${id}'`};_renderPersonalSubTab('wochenzettel')" style="padding:5px 13px;border-radius:20px;border:1.5px solid ${act?'var(--navy)':'var(--line)'};background:${act?'var(--navy)':'transparent'};color:${act?'#fff':'var(--muted)'};font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);white-space:nowrap">${lbl}</button>`;};
+  const chips=`<div style="display:flex;flex-wrap:wrap;gap:6px">${chipBtn(null,'Alle')}${_maCache.map(m=>chipBtn(m.id,h(m.name))).join('')}</div>`;
+
+  // Year selector (only if multiple years have data)
+  const yrSel=dataYears.length>1
+    ?`<select onchange="_wzChartYear=+this.value;_renderPersonalSubTab('wochenzettel')" style="border:1.5px solid var(--line);border-radius:7px;padding:4px 8px;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--navy);background:var(--white);cursor:pointer">${dataYears.map(y=>`<option value="${y}"${y===yr?' selected':''}>${y}</option>`).join('')}</select>`
+    :`<span style="font-size:12px;font-weight:600;color:var(--muted)">${yr}</span>`;
+
+  // Wochenzettel rows (filtered by person, newest first)
+  const listSorted=[...submitted].filter(w=>!maId||w.mitarbeiter_id===maId).sort((a,b)=>(b.woche_start||'').localeCompare(a.woche_start||''));
+  const wzRows=listSorted.length?listSorted.map(w=>{
+    const name=_maCache.find(m=>m.id===w.mitarbeiter_id)?.name||'–';
+    const brutto=keys.reduce((s,k)=>s+(parseFloat(w[k+'_std'])||0),0);
+    const pauseMin=keys.reduce((s,k)=>s+(parseInt(w[k+'_pause'])||0),0);
+    const netto=Math.max(0,brutto-pauseMin/60);
+    return`<div onclick="_wzOpenDetail('${w.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--navy)">KW ${w.kw} · ${w.jahr}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${h(name)} · ${_fmtD(w.woche_start)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <div style="text-align:right">
+          <div style="font-size:13.5px;font-weight:700;color:var(--navy)">${netto.toFixed(1).replace('.',',')} h</div>
+          ${pauseMin?`<div style="font-size:10.5px;color:var(--muted)">${pauseMin} Min Pause</div>`:''}
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>`;
+  }).join(''):`<div style="text-align:center;padding:24px;font-size:13px;color:var(--muted);font-style:italic">Noch keine eingereichten Wochenzettel.</div>`;
+
+  // Krank rows (filtered by person, newest first)
+  const krankList=[..._krankCache].filter(k=>!maId||k.mitarbeiter_id===maId).sort((a,b)=>(b.von_datum||'').localeCompare(a.von_datum||''));
+  const krankRows=krankList.length?krankList.map(k=>{
+    const name=_maCache.find(m=>m.id===k.mitarbeiter_id)?.name||'–';
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)">
+      <div>
+        <div style="font-size:12.5px;font-weight:700;color:var(--navy)">${h(name)}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:1px">${_fmtD(k.von_datum)}${k.bis_datum!==k.von_datum?' – '+_fmtD(k.bis_datum):''} · ${k.tage} Arbeitstag${k.tage!==1?'e':''}</div>
+        ${k.notiz?`<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:1px">${h(k.notiz)}</div>`:''}
+      </div>
+      <button onclick="deleteKrank('${k.id}')" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--sans);flex-shrink:0">Löschen</button>
+    </div>`;
+  }).join(''):`<div style="text-align:center;padding:16px;font-size:12.5px;color:var(--muted);font-style:italic">Keine Krankmeldungen eingetragen.</div>`;
+
+  return`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">Arbeitszeiten & Übersicht</div>
+      <button onclick="_wzOpenExportModal()" style="display:flex;align-items:center;gap:6px;background:#16a34a;color:#fff;border:none;border-radius:7px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Excel Export
+      </button>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap">
+      ${chips}
+      ${yrSel}
+    </div>
+
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px">Gesamtarbeitszeit · Std netto</div>
+      <div style="display:flex;align-items:flex-end;gap:3px">${barChart(arbeitStd,'#1e3a5f','h')}</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:12px">
+        <div style="font-size:10.5px;font-weight:700;color:#c2410c;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Krankheitstage</div>
+        <div style="display:flex;align-items:flex-end;gap:2px">${barChart(krankM,'#ea580c','d',52)}</div>
+      </div>
+      <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:12px">
+        <div style="font-size:10.5px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Urlaubstage</div>
+        <div style="display:flex;align-items:flex-end;gap:2px">${barChart(urlaubM,'#2563eb','d',52)}</div>
+      </div>
+    </div>
+
+    <div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Eingereichte Wochenzettel (${listSorted.length})</div>
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px">${wzRows}</div>
+
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px">
+      <div style="padding:12px 16px;background:#fff7ed;border-bottom:1px solid #fed7aa;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:12px;font-weight:700;color:#c2410c">Krankmeldungen</div>
+        <button onclick="_wzToggleKrankForm()" id="krankToggleBtn" style="display:flex;align-items:center;gap:5px;background:#ea580c;color:#fff;border:none;border-radius:6px;padding:5px 11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--sans)">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Eintragen
+        </button>
+      </div>
+      <div id="krankFormWrap" style="display:none;padding:14px;border-bottom:1px solid #fed7aa;background:#fffbf7">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px">Person</div>
+            <select id="krankMa" style="${iS}">${maOptsForm}</select>
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px">Von</div>
+            <input type="date" id="krankVon" style="${iS}" oninput="updKrankTage()">
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px">Bis</div>
+            <input type="date" id="krankBis" style="${iS}" oninput="updKrankTage()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:100px 1fr;gap:10px;align-items:end;margin-bottom:12px">
+          <div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px">Arbeitstage</div>
+            <input type="number" id="krankTageInp" min="1" max="60" style="${iS}" placeholder="Auto">
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px">Notiz (optional)</div>
+            <input type="text" id="krankNotiz" style="${iS}" placeholder="z.B. Attest liegt vor">
+          </div>
+        </div>
+        <button onclick="saveKrank()" style="background:#ea580c;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans)">Krankmeldung speichern</button>
+      </div>
+      ${krankRows}
+    </div>`;
+}
+
+function _wzApplyFilter(){
+  _wzFilter.maId=document.getElementById('wzFiltMa')?.value||null;
+  _wzFilter.von=document.getElementById('wzFiltVon')?.value||null;
+  _wzFilter.bis=document.getElementById('wzFiltBis')?.value||null;
+  _wzDetailId=null;
+  _renderPersonalSubTab('wochenzettel');
+}
+function _wzToggleKrankForm(){
+  const w=document.getElementById('krankFormWrap');
+  const b=document.getElementById('krankToggleBtn');
+  if(!w)return;
+  const open=w.style.display==='none';
+  w.style.display=open?'block':'none';
+  if(b)b.innerHTML=open?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Schließen':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Eintragen';
+}
+function updKrankTage(){
+  const von=document.getElementById('krankVon')?.value;
+  const bis=document.getElementById('krankBis')?.value;
+  if(!von||!bis)return;
+  const s=new Date(von+'T00:00:00'),e=new Date(bis+'T00:00:00');
+  if(e<s)return;
+  let c=0,cur=new Date(s);
+  while(cur<=e){const d=cur.getDay();if(d!==0&&d!==6)c++;cur.setDate(cur.getDate()+1);}
+  const el=document.getElementById('krankTageInp');if(el)el.value=c;
+}
+async function saveKrank(){
+  const maId=document.getElementById('krankMa')?.value;
+  const von=document.getElementById('krankVon')?.value;
+  const bis=document.getElementById('krankBis')?.value;
+  const tage=parseInt(document.getElementById('krankTageInp')?.value)||0;
+  const notiz=(document.getElementById('krankNotiz')?.value||'').trim();
+  if(!maId||!von||!bis||tage<1){toast('Bitte Person, Zeitraum und Arbeitstage angeben');return;}
+  const{data,error}=await _sb.from('krank').insert({mitarbeiter_id:maId,von_datum:von,bis_datum:bis,tage,notiz:notiz||null}).select().single();
+  if(error){toast('Fehler: '+error.message);return;}
+  _krankCache.push(data);
+  // Update draft wochenzettels: mark krank days
+  const _dk=['mo','di','mi','do','fr','sa'];
+  const _wkMap={};
+  let _cur=new Date(von+'T00:00:00');const _end=new Date(bis+'T00:00:00');
+  while(_cur<=_end){
+    const dow=_cur.getDay();
+    if(dow>=1&&dow<=6){
+      const _m=new Date(_cur);_m.setDate(_cur.getDate()-(dow-1));
+      const ms=_m.toISOString().slice(0,10);
+      if(!_wkMap[ms])_wkMap[ms]={};
+      _wkMap[ms][_dk[dow-1]+'_bem']='Krank';
+    }
+    _cur.setDate(_cur.getDate()+1);
+  }
+  for(const[ms,upd]of Object.entries(_wkMap)){
+    await _sb.from('wochenzettel').update(upd).eq('mitarbeiter_id',maId).eq('woche_start',ms).neq('status','eingereicht');
+  }
+  toast('Krankmeldung gespeichert');
+  _renderPersonalSubTab('wochenzettel');
+}
+async function deleteKrank(id){
+  if(!confirm('Krankmeldung löschen?'))return;
+  const{error}=await _sb.from('krank').delete().eq('id',id);
+  if(error){toast('Fehler: '+error.message);return;}
+  _krankCache=_krankCache.filter(k=>k.id!==id);
+  toast('Gelöscht');
+  _renderPersonalSubTab('wochenzettel');
+}
+function _wzOpenDetail(id){_wzDetailId=id;_renderPersonalSubTab('wochenzettel');}
+function _wzCloseDetail(){_wzDetailId=null;_renderPersonalSubTab('wochenzettel');}
+
+function _wzOpenExportModal(){
+  if(!window.XLSX){
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js';
+    s.onload=_wzRenderExportModal;
+    s.onerror=()=>toast('SheetJS konnte nicht geladen werden');
+    document.head.appendChild(s);
+    toast('Lade Export-Bibliothek…');
+  } else {
+    _wzRenderExportModal();
+  }
+}
+
+function _wzRenderExportModal(){
+  const today=new Date().toISOString().slice(0,10);
+  const janFirst=today.slice(0,4)+'-01-01';
+  const maOpts='<option value="">Alle Mitarbeiter</option>'+_maCache.map(m=>`<option value="${m.id}">${h(m.name)}</option>`).join('');
+  const inp=(id,lbl,val,type='date')=>`
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">${lbl}</label>
+      <input type="${type}" id="${id}" value="${val}" onchange="_wzUpdateExpCount()"
+        style="width:100%;border:1.5px solid var(--line);border-radius:8px;padding:9px 12px;font-family:var(--sans);font-size:13.5px;color:var(--navy);outline:none;background:var(--white)">
+    </div>`;
+  const overlay=document.createElement('div');
+  overlay.id='wzExpOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=`
+    <div style="background:var(--white);border-radius:14px;padding:24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.22)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--navy)">Excel Export</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Zeitraum & Filter auswählen</div>
+        </div>
+        <button onclick="_wzCloseExportModal()" style="background:var(--bg);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;color:var(--muted);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      ${inp('wzExpVon','Zeitraum von',janFirst)}
+      ${inp('wzExpBis','Zeitraum bis',today)}
+      <div style="margin-bottom:18px">
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Mitarbeiter</label>
+        <select id="wzExpMa" onchange="_wzUpdateExpCount()" style="width:100%;border:1.5px solid var(--line);border-radius:8px;padding:9px 12px;font-family:var(--sans);font-size:13.5px;color:var(--navy);outline:none;background:var(--white);appearance:auto">${maOpts}</select>
+      </div>
+      <div id="wzExpCountBox" style="background:var(--bg);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:12.5px;font-weight:600;color:var(--navy);text-align:center">–</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="_wzCloseExportModal()" style="flex:1;padding:11px;border:1.5px solid var(--line);border-radius:9px;background:var(--white);font-family:var(--sans);font-size:13px;font-weight:600;color:var(--muted);cursor:pointer">Abbrechen</button>
+        <button onclick="_wzDoExport()" id="wzExpBtn" style="flex:2;padding:11px;border:none;border-radius:9px;background:#16a34a;font-family:var(--sans);font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Als Excel speichern
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  _wzUpdateExpCount();
+}
+
+function _wzUpdateExpCount(){
+  const von=document.getElementById('wzExpVon')?.value||'';
+  const bis=document.getElementById('wzExpBis')?.value||'';
+  const maId=document.getElementById('wzExpMa')?.value||'';
+  const n=_wzGetFiltered(von,bis,maId).length;
+  const box=document.getElementById('wzExpCountBox');
+  if(box)box.textContent=n?`${n} Wochenzettel werden exportiert`:'Keine Einträge im gewählten Zeitraum';
+  const btn=document.getElementById('wzExpBtn');
+  if(btn)btn.disabled=!n;
+}
+
+function _wzGetFiltered(von,bis,maId){
+  return _wzMgmtCache.filter(w=>{
+    if(w.status!=='eingereicht')return false;
+    if(von&&w.woche_start<von)return false;
+    if(bis&&w.woche_start>bis)return false;
+    if(maId&&w.mitarbeiter_id!==maId)return false;
+    return true;
+  }).sort((a,b)=>(a.woche_start||'').localeCompare(b.woche_start||''));
+}
+
+function _wzCloseExportModal(){
+  document.getElementById('wzExpOverlay')?.remove();
+}
+
+function _wzDoExport(){
+  const von=document.getElementById('wzExpVon')?.value||'';
+  const bis=document.getElementById('wzExpBis')?.value||'';
+  const maId=document.getElementById('wzExpMa')?.value||'';
+  const keys=['mo','di','mi','do','fr','sa'];
+  const dayLabels=['Mo','Di','Mi','Do','Fr','Sa'];
+  const filtered=_wzGetFiltered(von,bis,maId);
+  if(!filtered.length){toast('Keine Daten im Zeitraum');return;}
+
+  const header=[
+    'Mitarbeiter','KW','Jahr','Woche ab',
+    ...dayLabels.flatMap(d=>[`${d} Std`,`${d} Pause (Min)`,`${d} Bemerkung`]),
+    'Brutto Std','Pause gesamt (Min)','Netto Std'
+  ];
+  const rows=filtered.map(w=>{
+    const name=_maCache.find(m=>m.id===w.mitarbeiter_id)?.name||'';
+    const brutto=keys.reduce((s,k)=>s+(parseFloat(w[k+'_std'])||0),0);
+    const pauseMin=keys.reduce((s,k)=>s+(parseInt(w[k+'_pause'])||0),0);
+    const netto=Math.max(0,brutto-pauseMin/60);
+    return[name,w.kw,w.jahr,w.woche_start,
+      ...keys.flatMap(k=>[parseFloat(w[k+'_std'])||0,parseInt(w[k+'_pause'])||0,w[k+'_bem']||'']),
+      Math.round(brutto*10)/10,pauseMin,Math.round(netto*10)/10];
+  });
+
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([header,...rows]);
+
+  // Spaltenbreiten
+  ws['!cols']=[{wch:22},{wch:5},{wch:6},{wch:12},
+    ...keys.flatMap(()=>[{wch:9},{wch:14},{wch:24}]),
+    {wch:11},{wch:18},{wch:10}];
+
+  // Kopfzeile fett
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(let c=range.s.c;c<=range.e.c;c++){
+    const addr=XLSX.utils.encode_cell({r:0,c});
+    if(!ws[addr])ws[addr]={};
+    ws[addr].s={font:{bold:true},fill:{fgColor:{rgb:'1E3A5F'}},font:{bold:true,color:{rgb:'FFFFFF'}}};
+  }
+
+  XLSX.utils.book_append_sheet(wb,ws,'Wochenzettel');
+
+  const maName=maId?(_maCache.find(m=>m.id===maId)?.name.split(' ')[0]||''):'Alle';
+  const dateTag=(von?von.slice(0,7):'')+(bis&&bis!==von?'_'+bis.slice(0,7):'');
+  XLSX.writeFile(wb,`Wochenzettel_${maName}_${dateTag}.xlsx`);
+  toast('Excel gespeichert');
+  _wzCloseExportModal();
 }
 
 /* ── URLAUB ── */
@@ -9187,7 +9625,7 @@ function _persUrlaub(){
     <div style="padding:11px 16px;border-bottom:1px solid var(--line)">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div>
-          <div style="font-size:12.5px;font-weight:600;color:var(--navy)">${h(u.mitarbeiter?.name||'–')}</div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--navy)">${h(_maCache.find(m=>m.id===u.mitarbeiter_id)?.name||'–')}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">${_fmtD(u.von_datum)} – ${_fmtD(u.bis_datum)} · ${u.arbeitstage} AT · ${u.jahr}</div>
           ${u.notiz?`<div style="font-size:11.5px;color:var(--muted);font-style:italic;margin-top:2px">${h(u.notiz)}</div>`:''}
         </div>
@@ -9231,38 +9669,16 @@ async function ablehnenUrlaub(id){
 function _persEinstellungen(){
   const get=k=>_einstCache[k]||'';
   return`
-    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Einstellungen · Personal & Benachrichtigungen</div>
-    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px">E-Mail Benachrichtigung</div>
-      <div style="margin-bottom:10px">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Manager E-Mail (erhält Urlaubsanträge)</div>
-        <input id="cfgEmail" type="email" value="${get('manager_email')}" placeholder="chef@diekjobst.de" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)">
-      </div>
-    </div>
-    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">EmailJS Konfiguration</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Für den automatischen E-Mail-Versand. Kostenloses Konto unter <strong>emailjs.com</strong> anlegen → Gmail verbinden → Template erstellen mit den Variablen: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:11px">to_email, ma_name, von_datum, bis_datum, arbeitstage, notiz</code></div>
-      <div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Service ID</div>
-        <input id="cfgSvcId" type="text" value="${get('emailjs_service_id')}" placeholder="service_xxxxxxx" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
-      <div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Template ID</div>
-        <input id="cfgTplId" type="text" value="${get('emailjs_template_id')}" placeholder="template_xxxxxxx" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
-      <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Public Key</div>
-        <input id="cfgPubKey" type="text" value="${get('emailjs_public_key')}" placeholder="XXXXXXXXXXXXXXXXXXXXXX" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
-    </div>
-    <button onclick="saveEinstellungen()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:12px 20px;font-family:var(--sans);font-size:13.5px;font-weight:700;cursor:pointer;width:100%">Einstellungen speichern</button>`;
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Einstellungen · Personal</div>
+    <div style="background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:20px;text-align:center;color:var(--muted);font-size:13px">Weitere Einstellungen folgen.</div>`;
 }
 
 async function saveEinstellungen(){
-  const pairs=[
-    ['manager_email',document.getElementById('cfgEmail')?.value||''],
-    ['emailjs_service_id',document.getElementById('cfgSvcId')?.value||''],
-    ['emailjs_template_id',document.getElementById('cfgTplId')?.value||''],
-    ['emailjs_public_key',document.getElementById('cfgPubKey')?.value||''],
-  ];
+  const pairs=[];
   for(const[key,value]of pairs){
     if(!value)continue;
-    await _sb.from('einstellungen').upsert({key,value,updated_at:new Date().toISOString()},{onConflict:'key'});
-    _einstCache[key]=value;
+    const{error}=await _sb.from('einstellungen').upsert({key,value:JSON.stringify(value),updated_at:new Date().toISOString()},{onConflict:'key'});
+    if(!error)_einstCache[key]=value;
   }
   toast('Einstellungen gespeichert ✓');
 }
