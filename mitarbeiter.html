@@ -336,7 +336,7 @@ async function checkPin(){
 // ─── DATA ────────────────────────────────────────────────────
 async function loadData(){
   const[{data:af},{data:wz},{data:ul},{data:kr},{data:es}]=await Promise.all([
-    _sb.from('aufgaben').select('*').order('created_at',{ascending:false}),
+    _sb.from('aufgaben').select('*, aufgaben_dateien(*)').order('created_at',{ascending:false}),
     _sb.from('wochenzettel').select('*').eq('mitarbeiter_id',_ma.id).order('woche_start',{ascending:false}),
     _sb.from('urlaub').select('*').eq('mitarbeiter_id',_ma.id).order('created_at',{ascending:false}),
     _sb.from('krank').select('*').eq('mitarbeiter_id',_ma.id).order('von_datum',{ascending:false}),
@@ -388,16 +388,22 @@ function renderAufgaben(){
     return`<span class="prio ${cls[p]||'p-normal'}">${lbl[p]||'Normal'}</span>`;
   };
   const chkIcon=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-  const row=(a,isDone)=>`
-    <div class="task">
+  const _afUrl=p=>_sb.storage.from('Aufgaben').getPublicUrl(p).data?.publicUrl||'';
+  const camIcon=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
+  const row=(a,isDone)=>{
+    const bilder=(a.aufgaben_dateien||[]);
+    const thumbs=bilder.length?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px">${bilder.map(d=>`<img src="${_afUrl(d.storage_path)}" onclick="_imgModal('${_afUrl(d.storage_path)}')" style="width:56px;height:56px;object-fit:cover;border-radius:7px;cursor:pointer;border:1px solid var(--line)">`).join('')}</div>`:'';
+    return`<div class="task">
       <div class="task-cb${isDone?' done':''}" onclick="toggleTask('${a.id}')">${isDone?chkIcon:''}</div>
       <div style="flex:1;min-width:0">
         <div class="task-title${isDone?' done':''}">${esc(a.titel)}</div>
         ${a.beschreibung?`<div class="task-desc">${esc(a.beschreibung)}</div>`:''}
-        ${!isDone?prioBadge(a.prioritaet):''}
+        ${!isDone?`<div style="display:flex;align-items:center;gap:8px;margin-top:4px">${prioBadge(a.prioritaet)}<button onclick="uploadAufgabeBild('${a.id}')" style="display:flex;align-items:center;gap:4px;background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;font-family:var(--sans)">${camIcon}Foto</button></div>`:''}
         ${isDone&&a.erledigt_von?`<div class="done-info"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>${esc(a.erledigt_von)} · ${fmtDate(a.erledigt_am?.slice(0,10))}</div>`:''}
+        ${thumbs}
       </div>
     </div>`;
+  };
   let h='';
   if(open.length){
     h+=`<div class="card"><div class="card-hdr">Offene Aufgaben <span class="cnt">${open.length}</span></div>${open.map(a=>row(a,false)).join('')}</div>`;
@@ -410,6 +416,28 @@ function renderAufgaben(){
   document.getElementById('tabAufgaben').innerHTML=h;
 }
 
+async function uploadAufgabeBild(aufgabeId){
+  const input=document.createElement('input');
+  input.type='file';input.accept='image/*';input.multiple=true;
+  input.onchange=async()=>{
+    if(!input.files?.length)return;
+    toast('Wird hochgeladen…');
+    for(const file of input.files){
+      const path=`${aufgabeId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+      const{error}=await _sb.storage.from('Aufgaben').upload(path,file,{contentType:file.type,upsert:false});
+      if(!error)await _sb.from('aufgaben_dateien').insert({aufgabe_id:aufgabeId,storage_path:path,dateiname:file.name,mime_type:file.type});
+    }
+    await loadData();renderAufgaben();toast('Bild gespeichert');
+  };
+  input.click();
+}
+function _imgModal(url){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  el.onclick=()=>el.remove();
+  el.innerHTML=`<img src="${url}" style="max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px">`;
+  document.body.appendChild(el);
+}
 async function toggleTask(id){
   const a=_aufgaben.find(x=>x.id===id);
   if(!a||a.status==='erledigt'){if(a?.status==='erledigt')toast('Bereits erledigt');return;}

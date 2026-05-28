@@ -8905,7 +8905,7 @@ async function renderStdPersonalTab(){
 async function loadPersonalData(standortId){
   const[{data:ma},{data:af},{data:wz},{data:ul},{data:kr},{data:es}]=await Promise.all([
     _sb.from('mitarbeiter').select('*').eq('standort_id',standortId).eq('aktiv',true).order('name'),
-    _sb.from('aufgaben').select('*').eq('standort_id',standortId).order('created_at',{ascending:false}),
+    _sb.from('aufgaben').select('*, aufgaben_dateien(*)').eq('standort_id',standortId).order('created_at',{ascending:false}),
     _sb.from('wochenzettel').select('*').order('woche_start',{ascending:false}),
     _sb.from('urlaub').select('*').order('created_at',{ascending:false}),
     _sb.from('krank').select('*').order('von_datum',{ascending:false}),
@@ -9075,7 +9075,11 @@ function _persAufgaben(){
   const done=_aufgabenCache.filter(a=>a.status==='erledigt');
   const prioMap={hoch:'#dc2626',normal:'#2563eb',niedrig:'#16a34a'};
   const pTag=p=>`<span style="display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;background:${prioMap[p]||'#2563eb'}20;color:${prioMap[p]||'#2563eb'}">${p||'normal'}</span>`;
-  const row=a=>`<div style="padding:10px 0;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px">
+  const _afUrl=p=>_sb.storage.from('Aufgaben').getPublicUrl(p).data?.publicUrl||'';
+  const row=a=>{
+    const bilder=(a.aufgaben_dateien||[]);
+    const thumbs=bilder.length?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px">${bilder.map(d=>`<img src="${_afUrl(d.storage_path)}" onclick="_imgModal('${_afUrl(d.storage_path)}')" style="width:52px;height:52px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--line)">`).join('')}</div>`:'';
+    return`<div style="padding:10px 0;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px">
     <div style="flex:1;min-width:0">
       <div style="font-size:13px;font-weight:600;color:${a.status==='erledigt'?'var(--muted)':'var(--navy)'};${a.status==='erledigt'?'text-decoration:line-through':''}">${h(a.titel)}</div>
       ${a.beschreibung?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${h(a.beschreibung)}</div>`:''}
@@ -9083,11 +9087,13 @@ function _persAufgaben(){
         ${a.status==='offen'?pTag(a.prioritaet):'<span style="font-size:10.5px;color:var(--muted)">Erledigt von '+h(a.erledigt_von||'–')+'</span>'}
         ${a.faellig_am?`<span style="font-size:10px;color:var(--muted)">Fällig: ${_fmtD(a.faellig_am)}</span>`:''}
       </div>
+      ${thumbs}
     </div>
     <button onclick="deleteAufgabe('${a.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;flex-shrink:0">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
     </button>
   </div>`;
+  };
   return`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="font-size:13px;font-weight:700;color:var(--navy)">Aufgaben</div>
@@ -9126,6 +9132,10 @@ function openAufgabeModal(){
         <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Fällig am (opt.)</div>
           <input id="afFaellig" type="date" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;color:var(--navy)"></div>
       </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Bilder anhängen (optional)</div>
+        <input id="afBilder" type="file" accept="image/*" multiple style="border:1.5px solid var(--line);border-radius:7px;padding:7px 10px;font-family:var(--sans);font-size:12px;width:100%;color:var(--navy);cursor:pointer">
+      </div>
       <div style="display:flex;gap:8px">
         <button onclick="saveAufgabe()" style="flex:2;background:var(--navy);color:#fff;border:none;border-radius:7px;padding:10px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">Anlegen</button>
         <button onclick="document.getElementById('aufgabeModalWrap').innerHTML=''" style="flex:1;background:none;border:1.5px solid var(--line);color:var(--muted);border-radius:7px;padding:10px;font-family:var(--sans);font-size:13px;cursor:pointer">Abbrechen</button>
@@ -9136,16 +9146,29 @@ function openAufgabeModal(){
 async function saveAufgabe(){
   const titel=(document.getElementById('afTitel')?.value||'').trim();
   if(!titel){toast('Titel erforderlich');return;}
-  const{error}=await _sb.from('aufgaben').insert({
+  const{data:newAf,error}=await _sb.from('aufgaben').insert({
     titel,beschreibung:document.getElementById('afBeschr')?.value||'',
     prioritaet:document.getElementById('afPrio')?.value||'normal',
     faellig_am:document.getElementById('afFaellig')?.value||null,
     standort_id:_stdDetailId,erstellt_von:'Management',status:'offen'
-  });
+  }).select().single();
   if(error){toast('Fehler: '+error.message);return;}
+  const files=[...(document.getElementById('afBilder')?.files||[])];
+  for(const file of files){
+    const path=`${newAf.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    const{error:upErr}=await _sb.storage.from('Aufgaben').upload(path,file,{contentType:file.type,upsert:false});
+    if(!upErr)await _sb.from('aufgaben_dateien').insert({aufgabe_id:newAf.id,storage_path:path,dateiname:file.name,mime_type:file.type});
+  }
   toast('Aufgabe angelegt ✓');
   await loadPersonalData(_stdDetailId);
   _renderPersonalSubTab('aufgaben');
+}
+function _imgModal(url){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  el.onclick=()=>el.remove();
+  el.innerHTML=`<img src="${url}" style="max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.5)">`;
+  document.body.appendChild(el);
 }
 
 async function deleteAufgabe(id){
