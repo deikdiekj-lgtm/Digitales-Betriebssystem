@@ -555,6 +555,36 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
 .fz-hist-table td.del{width:28px;text-align:center;cursor:pointer;color:#c62828;opacity:.4}
 .fz-hist-table td.del:hover{opacity:1}
 
+/* FZ CARD CLICKABLE */
+.fz-card{cursor:pointer;transition:box-shadow .15s,transform .1s}
+.fz-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.1);transform:translateY(-1px)}
+
+/* FZ DETAIL VIEW */
+.fzd-back{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);background:none;border:1.5px solid var(--line);border-radius:6px;padding:5px 12px;cursor:pointer;margin-bottom:20px;transition:all .12s}
+.fzd-back:hover{color:var(--navy);border-color:var(--navy);background:var(--bg)}
+.fzd-header{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;box-shadow:var(--shadow)}
+.fzd-header-left{display:flex;flex-direction:column;gap:4px}
+.fzd-kz{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--navy);letter-spacing:.5px}
+.fzd-bez{font-size:13px;color:var(--muted);margin-top:2px}
+.fzd-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:700px){.fzd-grid{grid-template-columns:1fr}}
+.fzd-section{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
+.fzd-section-title{font-family:var(--mono);font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.fzd-kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fzd-kpi{background:#f6f8fb;border-radius:6px;padding:10px 12px}
+.fzd-kpi-val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--navy)}
+.fzd-kpi-lbl{font-size:10.5px;color:var(--muted);margin-top:3px}
+.fzd-rep-row{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f3f7;font-size:12px}
+.fzd-rep-row:last-child{border:none;padding-bottom:0}
+.fzd-rep-kat{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.4px;padding:1px 7px;border-radius:10px;background:#f0fdf4;color:#166534;font-weight:700;margin-bottom:3px;display:inline-block}
+.fzd-rep-desc{color:var(--navy);font-size:12px;line-height:1.4}
+.fzd-rep-meta{font-family:var(--mono);font-size:11px;color:var(--muted);flex-shrink:0;text-align:right;margin-left:10px}
+.fzd-empty{font-size:12px;color:var(--muted);font-style:italic;padding:8px 0}
+.fzd-stamm-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f0f3f7;font-size:12px}
+.fzd-stamm-row:last-child{border:none;padding-bottom:0}
+.fzd-stamm-lbl{color:var(--muted)}
+.fzd-stamm-val{font-family:var(--mono);color:var(--navy);font-weight:600}
+
 /* TANK MODAL FORM */
 .tank-form{background:#f6f8fb;border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:18px}
 .tank-form-title{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
@@ -1692,6 +1722,7 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
         <div id="fz-grid" class="fz-grid">
           <div class="empty" style="grid-column:1/-1">Noch keine Fahrzeuge & Maschinen erfasst. Klicke auf <strong>„Fahrzeug & Maschine hinzufügen"</strong>.</div>
         </div>
+        <div id="fz-detail" style="display:none"></div>
       </div>
     </div>
 
@@ -1849,13 +1880,12 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
             <table style="width:100%;border-collapse:collapse">
               <thead>
                 <tr style="background:#f6f8fb;border-bottom:1px solid var(--line)">
-                  <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:left">Datum</th>
+                  <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:left">Monat</th>
                   <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:left">Fahrzeug</th>
-                  <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:right">KM-Stand</th>
-                  <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:right">Liter</th>
-                  <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:right">Kosten</th>
-                  <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:right">€/L</th>
-                  <th style="padding:9px 14px;width:40px"></th>
+                  <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:center">Tankungen</th>
+                  <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:right">Diesel gesamt</th>
+                  <th style="padding:9px 14px;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:right">Kosten gesamt</th>
+                  <th style="padding:9px 14px;width:32px"></th>
                 </tr>
               </thead>
               <tbody id="tank-arch-body">
@@ -2022,6 +2052,25 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
     </div>
 
     <div id="fp-view-reparatur" class="fp-view">
+      <div style="margin-bottom:20px">
+        <div style="font-size:17px;font-weight:700;color:var(--navy)">Reparaturhistorie</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Werkstattkosten & Reparaturübersicht</div>
+      </div>
+      <div class="fp-coming-soon">
+        <div class="fp-cs-icon"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+        <div class="fp-cs-title">Reparaturhistorie — in Bearbeitung</div>
+        <div class="fp-cs-sub">Eine vollständige Reparatur- und Wartungshistorie für alle Fahrzeuge & Maschinen — mit Belegen, Kostentransparenz und Werkstattvergleich.</div>
+        <ul class="fp-cs-list">
+          <li>Reparatureinträge je Fahrzeug mit Datum, Werkstatt und Kosten <span class="fp-cs-badge">BALD</span></li>
+          <li>Kostenauswertung nach Fahrzeug, Kategorie und Zeitraum <span class="fp-cs-badge">BALD</span></li>
+          <li>Rechnungen & Belege direkt hinterlegen und abrufen <span class="fp-cs-badge">BALD</span></li>
+          <li>Häufigste Reparaturarten & Kostenanalyse pro Fahrzeug <span class="fp-cs-badge">BALD</span></li>
+          <li>Werkstattvergleich & Kostentransparenz über alle Jahre <span class="fp-cs-badge">BALD</span></li>
+          <li>Export als PDF oder Excel <span class="fp-cs-badge">BALD</span></li>
+        </ul>
+      </div>
+    </div>
+    <div id="fp-view-reparatur-DISABLED" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
         <div>
           <div style="font-size:17px;font-weight:700;color:var(--navy)">Reparaturhistorie</div>
@@ -2162,36 +2211,20 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
         </div>
       </div>
 
-      <!-- EINTRÄGE TAB (Archiv) -->
+      <!-- EINTRÄGE TAB (In Bearbeitung) -->
       <div id="rep-eintr-view" style="display:none">
-        <div class="fp-card" style="padding:0;overflow:hidden">
-          <div style="padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px">
-            <div style="font-size:13px;font-weight:600;color:var(--navy)">Alle Einträge</div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <span id="rep-arch-count" style="font-size:11px;color:var(--muted)"></span>
-              <div style="position:relative">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute;left:8px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="rep-arch-search" oninput="renderRepEintraege()" placeholder="Suchen…" style="padding:5px 10px 5px 26px;border:1.5px solid var(--line);border-radius:6px;font-size:12px;font-family:var(--sans);background:var(--bg);color:var(--navy);width:180px;outline:none" onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='var(--line)'">
-              </div>
-            </div>
-          </div>
-          <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:12.5px">
-              <thead>
-                <tr style="background:var(--bg)">
-                  <th style="padding:9px 14px;text-align:left;font-weight:600;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)">Datum</th>
-                  <th style="padding:9px 14px;text-align:left;font-weight:600;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)">Fahrzeug</th>
-                  <th style="padding:9px 14px;text-align:left;font-weight:600;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)">Kategorie</th>
-                  <th style="padding:9px 14px;text-align:left;font-weight:600;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)">Beschreibung</th>
-                  <th style="padding:9px 14px;text-align:left;font-weight:600;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)">Werkstatt</th>
-                  <th style="padding:9px 14px;text-align:right;font-weight:600;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)">Kosten</th>
-                  <th style="padding:9px 14px;text-align:center;font-weight:600;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)">Aktion</th>
-                </tr>
-              </thead>
-              <tbody id="rep-arch-body"></tbody>
-            </table>
-            <div id="rep-arch-empty" style="text-align:center;padding:40px;color:var(--muted);font-size:12.5px;font-style:italic;display:none">Noch keine Einträge vorhanden.</div>
-          </div>
+        <div class="fp-coming-soon">
+          <div class="fp-cs-icon"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
+          <div class="fp-cs-title">Einträge — in Bearbeitung</div>
+          <div class="fp-cs-sub">Eine vollständige, durchsuchbare Reparaturhistorie für alle Fahrzeuge & Maschinen — mit Belegen, Kostentransparenz und Werkstattvergleich.</div>
+          <ul class="fp-cs-list">
+            <li>Kostenauswertung je Fahrzeug und Zeitraum <span class="fp-cs-badge">BALD</span></li>
+            <li>Filterbar nach Fahrzeug, Kategorie, Werkstatt und Zeitraum <span class="fp-cs-badge">BALD</span></li>
+            <li>Rechnungen & Belege direkt hinterlegen und abrufen <span class="fp-cs-badge">BALD</span></li>
+            <li>Häufigste Reparaturarten & Kostenanalyse pro Fahrzeug <span class="fp-cs-badge">BALD</span></li>
+            <li>Werkstattvergleich & Kostentransparenz über alle Jahre <span class="fp-cs-badge">BALD</span></li>
+            <li>Export als PDF oder Excel <span class="fp-cs-badge">BALD</span></li>
+          </ul>
         </div>
       </div>
     </div>
@@ -2331,19 +2364,13 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
     </div>
 
     <div id="fp-view-jahresplan" class="fp-view">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-        <div>
-          <div style="font-size:17px;font-weight:700;color:var(--navy)">Jahresplan Prüfungen</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:3px">Übersicht: wann welches Fahrzeug / Maschine welche Prüfung hat</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <button onclick="jpPrevYear()" style="background:#f1f5f9;border:1.5px solid rgba(21,36,58,.15);border-radius:6px;padding:5px 11px;cursor:pointer;color:var(--navy);font-size:16px;font-weight:700;line-height:1">‹</button>
-          <span id="jp-year-label" style="font-size:15px;font-weight:700;color:var(--navy);min-width:52px;text-align:center"></span>
-          <button onclick="jpNextYear()" style="background:#f1f5f9;border:1.5px solid rgba(21,36,58,.15);border-radius:6px;padding:5px 11px;cursor:pointer;color:var(--navy);font-size:16px;font-weight:700;line-height:1">›</button>
-        </div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;background:var(--white);border:1px solid var(--line);border-radius:12px">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px">Demnächst verfügbar</div>
+        <div style="font-size:13px;color:var(--muted);max-width:320px;line-height:1.6">Dieses Modul wird gerade entwickelt und steht in Kürze zur Verfügung.</div>
       </div>
-      <div id="jp-legend" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;align-items:center"></div>
-      <div id="jp-grid-wrap" style="overflow-x:auto;border-radius:10px;border:1.5px solid rgba(21,36,58,.1);background:#fff"></div>
     </div>
 
   </main>
@@ -2424,11 +2451,43 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
 
       <!-- Tab: Dokumente -->
       <div id="stdTabDokumente" style="display:none">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-          <button class="btn btn-ghost" style="font-size:12px;padding:7px 16px" onclick="openStdDocModal()">+ Dokument hinzufügen</button>
+
+        <!-- Dokument-Unterreiter -->
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:20px;flex-wrap:wrap" id="stdDocSubNav">
+          <button onclick="switchStdDocTab('arbeitsanweisungen')" data-docTab="arbeitsanweisungen" style="padding:9px 16px;border:none;border-bottom:2px solid transparent;background:none;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:var(--sans);margin-bottom:-2px;transition:color .12s">Arbeitsanweisungen</button>
+          <button onclick="switchStdDocTab('prozessdarstellungen')" data-docTab="prozessdarstellungen" style="padding:9px 16px;border:none;border-bottom:2px solid transparent;background:none;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:var(--sans);margin-bottom:-2px;transition:color .12s">Prozessdarstellungen</button>
+          <button onclick="switchStdDocTab('nachweise')" data-docTab="nachweise" style="padding:9px 16px;border:none;border-bottom:2px solid transparent;background:none;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:var(--sans);margin-bottom:-2px;transition:color .12s">Nachweise & Prüfungen</button>
+          <button onclick="switchStdDocTab('genehmigungen')" data-docTab="genehmigungen" style="padding:9px 16px;border:none;border-bottom:2px solid transparent;background:none;font-size:12px;font-weight:500;color:#94a3b8;cursor:default;font-family:var(--sans);margin-bottom:-2px;display:flex;align-items:center;gap:6px">
+            Genehmigungen
+            <span style="font-size:9px;font-weight:700;background:#f1f5f9;color:#94a3b8;padding:1px 7px;border-radius:10px;letter-spacing:.3px">In Bearbeitung</span>
+          </button>
         </div>
+
+        <!-- Unterreiter-Inhalte -->
+        <div id="stdDocTab-arbeitsanweisungen" style="display:none"></div>
+        <div id="stdDocTab-prozessdarstellungen" style="display:none"></div>
+        <div id="stdDocTab-nachweise" style="display:none"></div>
+        <div id="stdDocTab-genehmigungen" style="display:none">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;text-align:center;background:var(--white);border:1px solid var(--line);border-radius:12px">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:14px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px">In Bearbeitung</div>
+            <div style="font-size:12px;color:var(--muted);max-width:300px;line-height:1.6">Die Genehmigungsverwaltung wird gerade eingerichtet und steht in Kürze zur Verfügung.</div>
+          </div>
+        </div>
+
+        <!-- Allgemeine Dokumente (bisherige Liste, als Fallback) -->
         <div id="stdDocList"></div>
-        <div id="stdDocEmpty" style="color:var(--muted);font-size:13px;text-align:center;padding:32px;background:var(--bg);border-radius:8px">Noch keine Dokumente hinterlegt.</div>
+        <div id="stdDocEmpty" style="display:none;color:var(--muted);font-size:13px;text-align:center;padding:32px;background:var(--bg);border-radius:8px">Noch keine Dokumente hinterlegt.</div>
+      </div>
+
+      <!-- Tab: Personal -->
+      <div id="stdTabPersonal" style="display:none">
+        <div id="stdPersonalContent"></div>
+      </div>
+
+      <!-- Tab: Tank -->
+      <div id="stdTabTank" style="display:none">
+        <div id="stdTankContent"></div>
       </div>
 
     </main>
@@ -2661,9 +2720,9 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
         </div>
       </div>
 
-      <!-- Step 4: Schrägaufnahmen -->
+      <!-- Step 4: Seitenansichten -->
       <div id="begStep4" style="display:none">
-        <div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Schrägaufnahmen (bis zu 2, optional)</div>
+        <div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Seitenansichten (bis zu 4, optional)</div>
         <div id="schraegDropZone"
           onclick="document.getElementById('schraegFileInput').click()"
           ondragover="event.preventDefault();this.style.borderColor='var(--green)';this.style.background='#f0fdf4'"
@@ -2672,8 +2731,8 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
           style="border:2px dashed var(--line);border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--bg)">
           <input id="schraegFileInput" type="file" accept="image/*" multiple style="display:none" onchange="begAddSchraeg(this)">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" style="margin-bottom:8px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <div style="font-size:13px;color:var(--text);font-weight:600">Schrägaufnahmen ziehen oder klicken</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px">JPG · PNG · bis zu 2 Bilder</div>
+          <div style="font-size:13px;color:var(--text);font-weight:600">Seitenansichten hierher ziehen oder klicken</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">JPG · PNG · bis zu 4 Bilder · Nord, Süd, Ost, West</div>
         </div>
         <div id="begSchraegGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:10px"></div>
       </div>
@@ -2909,6 +2968,11 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
         <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
           <div class="fld"><label>Diesel (L)</label><input type="number" id="tank-liter" placeholder="z.B. 80" min="0" step="0.01"></div>
           <div class="fld"><label>AdBlue (L)</label><input type="number" id="tank-adblue" placeholder="z.B. 15" min="0" step="0.01"></div>
+        </div>
+        <div class="fld" style="margin-bottom:12px">
+          <label>Tankzettel <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+          <input type="file" id="tank-zettel-file" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;padding:6px 0">
+          <div style="font-size:10.5px;color:var(--muted);margin-top:3px">PDF oder Foto des handschriftlichen Zettels</div>
         </div>
         <button class="btn btn-green" onclick="saveTankEntry()">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -3227,6 +3291,10 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
       </button>
     </div>
     <div class="modal-foot" style="display:flex;justify-content:flex-end;gap:8px">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:4px">Tankzettel <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <input type="file" id="lkw-zettel-file" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;padding:4px 0">
+      </div>
       <button class="btn btn-ghost" onclick="closeLkwNachweis()">Abbrechen</button>
       <button class="btn btn-green" onclick="saveLkwNachweis()">Einträge speichern</button>
     </div>
@@ -3260,6 +3328,10 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
       </button>
     </div>
     <div class="modal-foot" style="display:flex;justify-content:flex-end;gap:8px">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:4px">Tankzettel <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <input type="file" id="maschinen-zettel-file" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;padding:4px 0">
+      </div>
       <button class="btn btn-ghost" onclick="closeMaschinenListe()">Abbrechen</button>
       <button class="btn btn-green" onclick="saveMaschinenListe()">Einträge speichern</button>
     </div>
@@ -3298,6 +3370,10 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
       <div id="td-tank-hist" style="max-height:200px;overflow-y:auto"></div>
     </div>
     <div class="modal-foot" style="display:flex;justify-content:flex-end;gap:8px">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:4px">Tankzettel <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <input type="file" id="td-zettel-file" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;padding:4px 0">
+      </div>
       <button class="btn btn-ghost" onclick="closeTdTank()">Abbrechen</button>
       <button class="btn btn-green" onclick="saveTdTankEntry()">Eintrag speichern</button>
     </div>
@@ -5198,6 +5274,11 @@ let fpCurrentView='dashboard', fpCurrentFilter='alle';
 
 async function showFpView(v){
   fpCurrentView=v;
+  /* Detailansicht immer schließen beim Reiter-Wechsel */
+  const fzDetailEl=document.getElementById('fz-detail');
+  const fzGridEl=document.getElementById('fz-grid');
+  if(fzDetailEl)fzDetailEl.style.display='none';
+  if(fzGridEl)fzGridEl.style.display='grid';
   document.querySelectorAll('.fp-snav-btn').forEach(b=>b.classList.toggle('active',b.dataset.fpv===v));
   document.querySelectorAll('.fp-view').forEach(x=>x.classList.remove('active'));
   document.getElementById('fp-view-'+v).classList.add('active');
@@ -5350,7 +5431,8 @@ async function _fzSyncFromSupabase(){
       adblue:t.adblue,
       preis:t.kosten,
       quelle:t.quelle||'einzel',
-      betriebsstunden:t.betriebsstunden
+      betriebsstunden:t.betriebsstunden,
+      zettelPath:t.zettel_storage_path||null
     }))
   }));
 }
@@ -5557,7 +5639,7 @@ function renderFahrzeuge(){
       </div>`;
 
 
-    return`<div class="fz-card">
+    return`<div class="fz-card" onclick="openFzDetail('${fz.id}')">
       <div class="fz-card-head">
         <div>
           <div class="fz-kz">${fz.kennzeichen}</div>
@@ -5565,10 +5647,10 @@ function renderFahrzeuge(){
           <span class="fz-typ-badge fz-typ-${typ}">${typLabel}</span>
         </div>
         <div class="fz-actions">
-          <button class="fz-ibtn" title="Bearbeiten" onclick="openFzModal('${fz.id}')">
+          <button class="fz-ibtn" title="Bearbeiten" onclick="event.stopPropagation();openFzModal('${fz.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
-          <button class="fz-ibtn danger" title="Löschen" onclick="deleteFz('${fz.id}')">
+          <button class="fz-ibtn danger" title="Löschen" onclick="event.stopPropagation();deleteFz('${fz.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           </button>
         </div>
@@ -5609,6 +5691,193 @@ function toggleTankHist(id,btn){
   const open=el.style.display!=='none';
   el.style.display=open?'none':'block';
   btn.textContent=open?`Verlauf (${loadFahrzeuge().find(f=>f.id===id)?.tankEintraege?.length||0}) anzeigen ▾`:'Verlauf ausblenden ▴';
+}
+
+/* ══ FAHRZEUG DETAILANSICHT ══ */
+function openFzDetail(fzId){
+  document.getElementById('fz-grid').style.display='none';
+  document.getElementById('fz-detail').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+  renderFzDetail(fzId);
+}
+function closeFzDetail(){
+  document.getElementById('fz-detail').style.display='none';
+  document.getElementById('fz-grid').style.display='grid';
+}
+function renderFzDetail(fzId){
+  const fz=loadFahrzeuge().find(f=>f.id===fzId);
+  if(!fz){closeFzDetail();return;}
+  const typLabels={mull:'Müllwagen',absetzer:'Absetzer',abroller:'Abroller',
+    schredder:'Schredder',hacker:'Hacker',radlader:'Radlader',bagger:'Bagger',
+    anlage:'Anlage',anhaenger:'Anhänger',sattel:'Sattelauflieger',kran:'Kran',
+    schub:'Schubfahrzeug',silo:'Silo / Waage',sonst:'Sonstiges'};
+  const typ=fz.typ||'mull';
+  const typLabel=typLabels[typ]||typ;
+
+  /* Prüffristen */
+  const huD=fzDaysDiff(fz.huFaellig),spD=fzDaysDiff(fz.spFaellig);
+  const uvvD=fzDaysDiff(fz.uvvFaellig),tachoD=fzDaysDiff(fz.tachoFaellig);
+  const huCls=fzAmpelCls(fz.huFaellig),spCls=fzAmpelCls(fz.spFaellig);
+  const uvvCls=fzAmpelCls(fz.uvvFaellig),tachoCls=fzAmpelCls(fz.tachoFaellig);
+
+  /* Wartung */
+  const w=fzWartungInfo(fz);
+  const wHtml=w?`
+    <div class="fzd-section" style="margin-bottom:14px">
+      <div class="fzd-section-title">Wartungsintervall</div>
+      <div class="fz-wartung ${w.cls}" style="margin-bottom:0">
+        <div class="fz-wartung-icon">🔧</div>
+        <div class="fz-wartung-body">
+          <div class="fz-wartung-val">${w.verbl<=0?'Überfällig!':w.verbl.toLocaleString('de-DE')+' km verbleibend'}</div>
+          <div class="fz-wartung-sub">Nächste bei ${w.naechste.toLocaleString('de-DE')} km · Zuletzt bei ${(+fz.wartungLetzteKm||0).toLocaleString('de-DE')} km · Intervall ${(+fz.wartungIntervallKm||0).toLocaleString('de-DE')} km</div>
+          <div class="fz-bar-wrap"><div class="fz-bar ${w.cls}" style="width:${w.pct.toFixed(0)}%"></div></div>
+        </div>
+      </div>
+    </div>`:'';
+
+  /* Tankdaten KPIs */
+  const tank=fz.tankEintraege||[];
+  const totalL=tank.reduce((s,t)=>s+(t.liter||0),0);
+  const totalKosten=tank.reduce((s,t)=>s+(t.preis||0),0);
+  const lastT=[...tank].sort((a,b)=>b.datum>a.datum?1:-1)[0];
+  const tankHtml=`
+    <div class="fzd-section">
+      <div class="fzd-section-title">Tankdaten</div>
+      <div class="fzd-kpi-grid">
+        <div class="fzd-kpi"><div class="fzd-kpi-val">${tank.length}</div><div class="fzd-kpi-lbl">Tankungen gesamt</div></div>
+        <div class="fzd-kpi"><div class="fzd-kpi-val">${totalL>0?totalL.toLocaleString('de-DE',{maximumFractionDigits:0})+' L':'–'}</div><div class="fzd-kpi-lbl">Liter gesamt</div></div>
+        <div class="fzd-kpi"><div class="fzd-kpi-val">${totalKosten>0?totalKosten.toLocaleString('de-DE',{maximumFractionDigits:2,minimumFractionDigits:2})+' €':'–'}</div><div class="fzd-kpi-lbl">Kosten gesamt</div></div>
+        <div class="fzd-kpi"><div class="fzd-kpi-val" style="font-size:12px">${lastT?fzFmtD(lastT.datum):'–'}</div><div class="fzd-kpi-lbl">Letzte Tankung</div></div>
+      </div>
+    </div>`;
+
+  /* Reparaturen */
+  const reps=(loadRepairs()||[]).filter(r=>r.fzId===fzId||r.kennzeichen===fz.kennzeichen)
+    .sort((a,b)=>b.datum>a.datum?1:-1).slice(0,4);
+  const katColors={wartung:'#f0fdf4;color:#166534',reparatur:'#fff7ed;color:#b45309',unfall:'#fff5f5;color:#c62828',tuev:'#eff6ff;color:#1a56db',sonstiges:'#f6f8fb;color:var(--muted)'};
+  const repHtml=`
+    <div class="fzd-section">
+      <div class="fzd-section-title">Reparaturen & Wartungen</div>
+      ${reps.length?reps.map(r=>`
+        <div class="fzd-rep-row">
+          <div>
+            <span class="fzd-rep-kat" style="background:${(katColors[r.kategorie]||katColors.sonstiges).split(';')[0]};${(katColors[r.kategorie]||katColors.sonstiges).split(';')[1]||''}">${r.kategorie||'–'}</span>
+            <div class="fzd-rep-desc">${r.beschreibung||'–'}</div>
+          </div>
+          <div class="fzd-rep-meta">
+            <div>${fzFmtD(r.datum)}</div>
+            ${r.kosten?`<div style="font-weight:600;color:var(--navy)">${r.kosten.toLocaleString('de-DE',{maximumFractionDigits:2})} €</div>`:''}
+          </div>
+        </div>`).join('')
+      :`<div class="fzd-empty">Noch keine Einträge vorhanden.</div>`}
+      ${reps.length>=4?`<div style="margin-top:8px;font-size:11px;color:var(--green);cursor:pointer;font-weight:600" onclick="showFpView('reparatur')">Alle anzeigen →</div>`:''}
+    </div>`;
+
+  /* Tageszettel (nur Müllwagen) */
+  let tzHtml='';
+  if(typ==='mull'){
+    const kzNorm=fz.kennzeichen.trim().toUpperCase();
+    const tzRecs=(allData||[]).filter(r=>r.kennzeichen&&r.kennzeichen.trim().toUpperCase()===kzNorm);
+    if(tzRecs.length){
+      const totalKm=tzRecs.reduce((s,r)=>s+(r.kmGesamt||0),0);
+      const sorted=[...tzRecs].sort((a,b)=>b.datum>a.datum?1:-1);
+      const kmEnds=tzRecs.filter(r=>r.kmEnde!=null).map(r=>r.kmEnde);
+      const lastKmEnd=kmEnds.length?Math.max(...kmEnds):null;
+      tzHtml=`
+        <div class="fzd-section" style="margin-top:14px">
+          <div class="fzd-section-title">Aus Tageszetteln</div>
+          <div class="fzd-kpi-grid" style="margin-bottom:10px">
+            <div class="fzd-kpi"><div class="fzd-kpi-val">${tzRecs.length}</div><div class="fzd-kpi-lbl">Einsätze gesamt</div></div>
+            <div class="fzd-kpi"><div class="fzd-kpi-val">${totalKm>0?totalKm.toLocaleString('de-DE')+' km':'–'}</div><div class="fzd-kpi-lbl">KM gefahren (gesamt)</div></div>
+            <div class="fzd-kpi"><div class="fzd-kpi-val">${lastKmEnd!=null?lastKmEnd.toLocaleString('de-DE')+' km':'–'}</div><div class="fzd-kpi-lbl">Letzter KM-Stand</div></div>
+            <div class="fzd-kpi"><div class="fzd-kpi-val" style="font-size:12px">${sorted[0]?.fahrer||'–'}</div><div class="fzd-kpi-lbl">Zuletzt gefahren von</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--muted)">Letzter Einsatz: <strong>${fzFmtD(sorted[0].datum)}</strong></div>
+        </div>`;
+    }
+  }
+
+  /* Prüfzertifikate aus _pruefCache */
+  const pruefKeys=['hu','sp','uvv','tacho'];
+  const pruefLabels={hu:'HU',sp:'SP',uvv:'UVV',tacho:'Tacho-Prüfung'};
+  const pruefRows=pruefKeys.map(k=>{
+    const entry=(_pruefCache||{})[`${fzId}_${k}`];
+    if(!entry)return null;
+    const ampCls=fzAmpelCls(entry.naechste);
+    return{k,label:pruefLabels[k],entry,ampCls};
+  }).filter(Boolean);
+  const pruefHtml=pruefRows.length?`
+    <div class="fzd-section" style="margin-top:14px">
+      <div class="fzd-section-title">Prüfstatus (Letzte Einträge)</div>
+      ${pruefRows.map(p=>`
+        <div class="fzd-stamm-row">
+          <span class="fzd-stamm-lbl">${p.label}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${p.entry.naechste?`<span class="fz-dot" style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${p.ampCls==='gruen'?'#1e8c4a':p.ampCls==='gelb'?'#c89a00':'#c62828'}"></span>`:''}
+            <span class="fzd-stamm-val">${p.entry.naechste||'–'}</span>
+          </div>
+        </div>`).join('')}
+    </div>`:'';
+
+  const el=document.getElementById('fz-detail');
+  el.innerHTML=`
+    <button class="fzd-back" onclick="closeFzDetail()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Zurück zur Übersicht
+    </button>
+
+    <div class="fzd-header">
+      <div class="fzd-header-left">
+        <div class="fzd-kz">${fz.kennzeichen}</div>
+        ${fz.bezeichnung?`<div class="fzd-bez">${fz.bezeichnung}</div>`:''}
+        <span class="fz-typ-badge fz-typ-${typ}" style="margin-top:6px;display:inline-block">${typLabel}</span>
+      </div>
+      <div class="fz-actions">
+        <button class="fz-ibtn" title="Bearbeiten" onclick="openFzModal('${fzId}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="fz-ibtn danger" title="Löschen" onclick="deleteFz('${fzId}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="fzd-section" style="margin-bottom:14px">
+      <div class="fzd-section-title">Prüffristen</div>
+      <div class="fz-status-row" style="margin-bottom:0">
+        <div class="fz-ampel ${huCls}">
+          <div class="fz-ampel-hd"><span class="fz-dot"></span><span class="fz-ampel-lbl">HU</span></div>
+          <div class="fz-ampel-val">${fzFmtD(fz.huFaellig)||'–'}</div>
+          <div class="fz-ampel-sub">${fzFmtDays(huD,fz.huFaellig)}</div>
+        </div>
+        <div class="fz-ampel ${spCls}">
+          <div class="fz-ampel-hd"><span class="fz-dot"></span><span class="fz-ampel-lbl">SP</span></div>
+          <div class="fz-ampel-val">${fzFmtD(fz.spFaellig)||'–'}</div>
+          <div class="fz-ampel-sub">${fzFmtDays(spD,fz.spFaellig)}</div>
+        </div>
+        <div class="fz-ampel ${uvvCls}">
+          <div class="fz-ampel-hd"><span class="fz-dot"></span><span class="fz-ampel-lbl">UVV</span></div>
+          <div class="fz-ampel-val">${fzFmtD(fz.uvvFaellig)||'–'}</div>
+          <div class="fz-ampel-sub">${fzFmtDays(uvvD,fz.uvvFaellig)}</div>
+        </div>
+        <div class="fz-ampel ${tachoCls}">
+          <div class="fz-ampel-hd"><span class="fz-dot"></span><span class="fz-ampel-lbl">Tacho</span></div>
+          <div class="fz-ampel-val">${fzFmtD(fz.tachoFaellig)||'–'}</div>
+          <div class="fz-ampel-sub">${fzFmtDays(tachoD,fz.tachoFaellig)}</div>
+        </div>
+      </div>
+    </div>
+
+    ${wHtml}
+
+    <div class="fzd-grid">
+      ${tankHtml}
+      ${repHtml}
+    </div>
+
+    ${tzHtml}
+    ${pruefHtml}
+  `;
 }
 
 /* ══ TANKDATEN PROTOKOLL ══ */
@@ -5888,37 +6157,87 @@ function showTankTab(tab){
 function renderTankEintraege(){
   const allFz=loadFahrzeuge();
   const q=(document.getElementById('tank-arch-search')?.value||'').toLowerCase();
-  let rows=[];
+  const groupMap=new Map();
   allFz.forEach(fz=>{
     if(q&&!(fz.kennzeichen||'').toLowerCase().includes(q)&&!(fz.bezeichnung||'').toLowerCase().includes(q))return;
-    (fz.tankEintraege||[]).forEach(t=>rows.push({fz,t}));
+    (fz.tankEintraege||[]).forEach(t=>{
+      const month=(t.datum||'').slice(0,7);
+      if(!month)return;
+      const gk=`${month}__${fz.id}`;
+      if(!groupMap.has(gk))groupMap.set(gk,{fz,month,entries:[]});
+      groupMap.get(gk).entries.push(t);
+    });
   });
-  rows.sort((a,b)=>b.t.datum>a.t.datum?1:-1);
+  const groups=[...groupMap.entries()].sort(([a],[b])=>b>a?1:-1);
   const cnt=document.getElementById('tank-arch-count');
-  if(cnt)cnt.textContent=rows.length+' Einträge';
+  if(cnt)cnt.textContent=groups.length+(groups.length===1?' Monat':' Monate');
   const tbody=document.getElementById('tank-arch-body');
   if(!tbody)return;
-  if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="7" style="padding:28px;text-align:center;font-size:12.5px;color:var(--muted);font-style:italic">Noch keine Einträge vorhanden.</td></tr>';
+  if(!groups.length){
+    tbody.innerHTML='<tr><td colspan="6" style="padding:28px;text-align:center;font-size:12.5px;color:var(--muted);font-style:italic">Noch keine Einträge vorhanden.</td></tr>';
     return;
   }
-  tbody.innerHTML=rows.map(({fz,t})=>{
-    const epl=t.liter&&t.preis?(t.preis/t.liter).toFixed(3)+' €':'–';
-    const km=t.km!=null?t.km:'null';
-    const liter=t.liter!=null?t.liter:'null';
-    const preis=t.preis!=null?t.preis:'null';
-    return`<tr style="border-bottom:1px solid #f0f3f7;transition:background .08s" onmouseover="this.style.background='#f6f9fc'" onmouseout="this.style.background=''">
-      <td style="padding:10px 14px;font-family:var(--mono);font-size:12px">${fzFmtD(t.datum)}</td>
-      <td style="padding:10px 14px"><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--navy)">${fz.kennzeichen}</span>${fz.bezeichnung?`<span style="font-size:10.5px;color:var(--muted);margin-left:6px">${fz.bezeichnung}</span>`:''}</td>
-      <td style="padding:10px 14px;font-family:var(--mono);font-size:12px;text-align:right">${t.km!=null?t.km.toLocaleString('de-DE')+' km':'–'}</td>
-      <td style="padding:10px 14px;font-family:var(--mono);font-size:12px;text-align:right">${t.liter!=null?t.liter.toLocaleString('de-DE')+' L':'–'}</td>
-      <td style="padding:10px 14px;font-family:var(--mono);font-size:12px;text-align:right">${t.preis!=null?t.preis.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–'}</td>
-      <td style="padding:10px 14px;font-family:var(--mono);font-size:12px;text-align:right;color:var(--muted)">${epl}</td>
-      <td style="padding:10px 14px;text-align:center">
-        <button onclick="deleteTankArchEntry('${fz.id}','${t.datum}',${km},${liter},${preis})" style="background:none;border:none;cursor:pointer;color:#ef4444;padding:2px 6px;font-size:13px;line-height:1" title="Löschen">✕</button>
+  tbody.innerHTML=groups.map(([gk,{fz,month,entries}])=>{
+    const[y,mo]=month.split('-').map(Number);
+    const monthLabel=new Date(y,mo-1,1).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+    const totalL=entries.reduce((s,e)=>s+(e.liter||0),0);
+    const totalP=entries.reduce((s,e)=>s+(e.preis||0),0);
+    const safeGk=gk.replace(/[^a-zA-Z0-9]/g,'_');
+    const detailRows=entries.slice().sort((a,b)=>a.datum>b.datum?1:-1).map(t=>{
+      const epl=t.liter&&t.preis?(t.preis/t.liter).toFixed(3)+' €/L':'–';
+      const km=t.km??'null',liter=t.liter??'null',preis=t.preis??'null';
+      const zettelBtn=t.zettelPath?`<button onclick="event.stopPropagation();openTankZettel('${t.zettelPath}')" style="background:none;border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--navy);padding:2px 7px;font-size:11px;font-family:var(--sans)">📄 Zettel</button>`:'';
+      return`<tr style="background:#f8fafc;border-bottom:1px solid #eef1f5">
+        <td style="padding:6px 14px 6px 36px;font-family:var(--mono);font-size:11.5px;color:var(--muted)">${fzFmtD(t.datum)}</td>
+        <td style="padding:6px 14px;font-family:var(--mono);font-size:11.5px">${t.km!=null?t.km.toLocaleString('de-DE')+' km':'–'}</td>
+        <td style="padding:6px 14px;font-family:var(--mono);font-size:11.5px;text-align:right">${t.liter!=null?t.liter.toLocaleString('de-DE')+' L':'–'}</td>
+        <td style="padding:6px 14px;font-family:var(--mono);font-size:11.5px;text-align:right">${t.preis!=null?t.preis.toLocaleString('de-DE',{minimumFractionDigits:2})+' €':'–'}</td>
+        <td style="padding:6px 14px;font-family:var(--mono);font-size:11.5px;text-align:right;color:var(--muted)">${epl}</td>
+        <td style="padding:6px 8px;text-align:right;white-space:nowrap"><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">${zettelBtn}<button onclick="event.stopPropagation();deleteTankArchEntry('${fz.id}','${t.datum}',${km},${liter},${preis})" style="background:none;border:none;cursor:pointer;color:#ef4444;padding:2px 6px;font-size:13px;line-height:1" title="Löschen">✕</button></div></td>
+      </tr>`;
+    }).join('');
+    return`<tr onclick="toggleTankMonth('${safeGk}')" style="cursor:pointer;border-bottom:1px solid #eef1f5;transition:background .08s" onmouseover="this.style.background='#f0f4fb'" onmouseout="this.style.background=''">
+      <td style="padding:11px 14px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg id="tank-chev-${safeGk}" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="flex-shrink:0;transition:transform .15s"><polyline points="6 9 12 15 18 9"/></svg>
+          <span style="font-weight:600;font-size:13px;color:var(--navy)">${monthLabel}</span>
+        </div>
+      </td>
+      <td style="padding:11px 14px"><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--navy)">${fz.kennzeichen}</span>${fz.bezeichnung?`<span style="font-size:10.5px;color:var(--muted);margin-left:6px">${fz.bezeichnung}</span>`:''}</td>
+      <td style="padding:11px 14px;font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center">${entries.length} Tankung${entries.length!==1?'en':''}</td>
+      <td style="padding:11px 14px;font-family:var(--mono);font-size:12px;font-weight:600;text-align:right">${totalL.toLocaleString('de-DE')} L</td>
+      <td style="padding:11px 14px;font-family:var(--mono);font-size:12px;font-weight:600;text-align:right">${totalP.toLocaleString('de-DE',{minimumFractionDigits:2})} €</td>
+      <td style="padding:11px 8px;text-align:center;width:32px"></td>
+    </tr>
+    <tr id="tank-month-detail-${safeGk}" style="display:none">
+      <td colspan="6" style="padding:0">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f1f5f9">
+            <th style="padding:5px 14px 5px 36px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:left;letter-spacing:.5px;text-transform:uppercase;font-weight:600">Datum</th>
+            <th style="padding:5px 14px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:left;letter-spacing:.5px;text-transform:uppercase;font-weight:600">KM-Stand</th>
+            <th style="padding:5px 14px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right;letter-spacing:.5px;text-transform:uppercase;font-weight:600">Diesel</th>
+            <th style="padding:5px 14px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right;letter-spacing:.5px;text-transform:uppercase;font-weight:600">Kosten</th>
+            <th style="padding:5px 14px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right;letter-spacing:.5px;text-transform:uppercase;font-weight:600">€/L</th>
+            <th></th>
+          </tr></thead>
+          <tbody>${detailRows}</tbody>
+        </table>
       </td>
     </tr>`;
   }).join('');
+}
+function toggleTankMonth(safeGk){
+  const detail=document.getElementById(`tank-month-detail-${safeGk}`);
+  const chev=document.getElementById(`tank-chev-${safeGk}`);
+  if(!detail)return;
+  const isOpen=detail.style.display!=='none';
+  detail.style.display=isOpen?'none':'table-row';
+  if(chev)chev.style.transform=isOpen?'':'rotate(-90deg)';
+}
+async function openTankZettel(path){
+  const{data,error}=await _sb.storage.from('Fahrzeuge').createSignedUrl(path,3600);
+  if(error||!data?.signedUrl){toast('Zettel konnte nicht geöffnet werden.');return;}
+  window.open(data.signedUrl,'_blank');
 }
 
 function deleteTankArchEntry(fzId,datum,km,liter,preis){
@@ -6110,7 +6429,7 @@ async function saveTankEntry(){
   const fromProto=!currentTankKz;
   const targetId=fromProto?document.getElementById('tank-fz-select').value:currentTankKz;
   if(!targetId){alert('Bitte Fahrzeug auswählen.');return;}
-  const{error}=await _sb.from('tankdaten').insert({
+  const{data:insData,error}=await _sb.from('tankdaten').insert({
     fahrzeug_id:targetId,
     datum,
     km_stand:+document.getElementById('tank-km').value||null,
@@ -6118,12 +6437,21 @@ async function saveTankEntry(){
     adblue:+document.getElementById('tank-adblue').value||null,
     kosten:+document.getElementById('tank-preis').value||null,
     quelle:'einzel'
-  });
+  }).select('id').single();
   if(error){alert('Fehler: '+error.message);return;}
+  const zettelFile=document.getElementById('tank-zettel-file')?.files[0];
+  if(zettelFile&&insData?.id){
+    const ext=(zettelFile.name||'').split('.').pop()||'pdf';
+    const zettelPath=`tank/${targetId}/${datum}_${insData.id}.${ext}`;
+    const{error:upErr}=await _sb.storage.from('Fahrzeuge').upload(zettelPath,zettelFile,{upsert:true});
+    if(upErr){toast('⚠ Zettel-Upload: '+upErr.message);}
+    else{await _sb.from('tankdaten').update({zettel_storage_path:zettelPath}).eq('id',insData.id);}
+  }
   document.getElementById('tank-km').value='';
   document.getElementById('tank-liter').value='';
   document.getElementById('tank-adblue').value='';
   document.getElementById('tank-preis').value='';
+  if(document.getElementById('tank-zettel-file'))document.getElementById('tank-zettel-file').value='';
   await _fzSyncFromSupabase();
   if(fromProto){
     closeTankModal();
@@ -6900,13 +7228,22 @@ async function saveLkwNachweis(){
   if(!fzId){alert('Bitte Fahrzeug wählen.');return;}
   const valid=_lkwRows.filter(r=>r.datum&&(r.diesel||r.adblue));
   if(!valid.length){alert('Bitte mindestens eine Zeile mit Datum und Liter ausfüllen.');return;}
+  let zettelPath=null;
+  const zettelFile=document.getElementById('lkw-zettel-file')?.files[0];
+  if(zettelFile){
+    const ext=(zettelFile.name||'').split('.').pop()||'pdf';
+    zettelPath=`tank/${fzId}/lkw-nachweis_${Date.now()}.${ext}`;
+    const{error:upErr}=await _sb.storage.from('Fahrzeuge').upload(zettelPath,zettelFile,{upsert:true});
+    if(upErr){toast('⚠ Zettel-Upload: '+upErr.message);zettelPath=null;}
+  }
   const{error}=await _sb.from('tankdaten').insert(valid.map(r=>({
     fahrzeug_id:fzId,
     datum:r.datum,
     km_stand:+r.km||null,
     liter:+r.diesel||null,
     adblue:+r.adblue||null,
-    quelle:'lkw-nachweis'
+    quelle:'lkw-nachweis',
+    zettel_storage_path:zettelPath
   })));
   if(error){alert('Fehler: '+error.message);return;}
   await _fzSyncFromSupabase();
@@ -6959,12 +7296,21 @@ async function saveMaschinenListe(){
   if(!fzId){alert('Bitte Maschine wählen.');return;}
   const valid=_mRows.filter(r=>r.datum&&r.liter);
   if(!valid.length){alert('Bitte mindestens eine Zeile mit Datum und Liter ausfüllen.');return;}
+  let zettelPath=null;
+  const zettelFile=document.getElementById('maschinen-zettel-file')?.files[0];
+  if(zettelFile){
+    const ext=(zettelFile.name||'').split('.').pop()||'pdf';
+    zettelPath=`tank/${fzId}/maschinen_${Date.now()}.${ext}`;
+    const{error:upErr}=await _sb.storage.from('Fahrzeuge').upload(zettelPath,zettelFile,{upsert:true});
+    if(upErr){toast('⚠ Zettel-Upload: '+upErr.message);zettelPath=null;}
+  }
   const{error}=await _sb.from('tankdaten').insert(valid.map(r=>({
     fahrzeug_id:fzId,
     datum:r.datum,
     betriebsstunden:+r.betriebsstunden||null,
     liter:+r.liter||null,
-    quelle:'maschinen-liste'
+    quelle:'maschinen-liste',
+    zettel_storage_path:zettelPath
   })));
   if(error){alert('Fehler: '+error.message);return;}
   await _fzSyncFromSupabase();
@@ -7021,18 +7367,27 @@ async function saveTdTankEntry(){
   const kz=document.getElementById('td-kennzeichen').value.trim();
   const liter=+document.getElementById('td-liter').value||null;
   if(!datum||!kz||!liter){alert('Bitte Datum, Kennzeichen/Maschine und Liter ausf\xfcllen.');return;}
-  const{error}=await _sb.from('td_tank_eintraege').insert({
+  const{data:insData,error}=await _sb.from('td_tank_eintraege').insert({
     datum,kraftstoff:document.getElementById('td-kraftstoff').value,
     kennzeichen:kz,liter,
     totalanzeige:+document.getElementById('td-totalanzeige').value||null,
     notiz:document.getElementById('td-notiz').value.trim()||null
-  });
+  }).select('id').single();
   if(error){toast('Fehler: '+error.message);return;}
+  const zettelFile=document.getElementById('td-zettel-file')?.files[0];
+  if(zettelFile&&insData?.id){
+    const ext=(zettelFile.name||'').split('.').pop()||'pdf';
+    const zettelPath=`tank/td/${datum}_${insData.id}.${ext}`;
+    const{error:upErr}=await _sb.storage.from('Fahrzeuge').upload(zettelPath,zettelFile,{upsert:true});
+    if(upErr){toast('⚠ Zettel-Upload: '+upErr.message);}
+    else{await _sb.from('td_tank_eintraege').update({zettel_storage_path:zettelPath}).eq('id',insData.id);}
+  }
   await _tdSyncFromSupabase();
   document.getElementById('td-kennzeichen').value='';
   document.getElementById('td-liter').value='';
   document.getElementById('td-totalanzeige').value='';
   document.getElementById('td-notiz').value='';
+  if(document.getElementById('td-zettel-file'))document.getElementById('td-zettel-file').value='';
   renderTdTankHist();
   toast('TD-Eintrag gespeichert');
 }
@@ -7177,12 +7532,13 @@ async function openPruefStatus(fzId,pruefKey,label,kz,fälligDatum){
 }
 function closePruefStatus(){document.getElementById('pruefStatusModal').classList.add('hidden');}
 
-function pruefZertOeffnen(){
+async function pruefZertOeffnen(){
   const key=document.getElementById('psm-key').value;
   const cur=(_pruefCache||{})[key];
   if(!cur?._sbCertPath){toast('Kein Zertifikat hinterlegt.');return;}
-  const{data}=_sb.storage.from('Fahrzeuge').getPublicUrl(cur._sbCertPath);
-  window.open(data.publicUrl,'_blank');
+  const{data,error}=await _sb.storage.from('Fahrzeuge').createSignedUrl(cur._sbCertPath,3600);
+  if(error||!data?.signedUrl){toast('Zertifikat konnte nicht geöffnet werden.');return;}
+  window.open(data.signedUrl,'_blank');
 }
 function pruefZertEntfernen(){
   _psmZertHasExisting=false;
@@ -7220,7 +7576,8 @@ async function savePruefStatus(){
   if(_psmCurrentStatus==='erledigt'&&file){
     const ext=(file.name||'').split('.').pop()||'pdf';
     certPath=`pruef/${key}/zert_${today}.${ext}`;
-    await _sb.storage.from('Fahrzeuge').upload(certPath,file,{upsert:true});
+    const{error:upErr}=await _sb.storage.from('Fahrzeuge').upload(certPath,file,{upsert:true});
+    if(upErr){toast('Upload fehlgeschlagen: '+upErr.message);return;}
   }
   if(_psmZertRemoved&&certPath){
     await _sb.storage.from('Fahrzeuge').remove([certPath]);
@@ -7378,17 +7735,22 @@ function renderPruefHistorie(){
 }
 
 async function pruefHistZertOeffnen(key){
-  const entry=await pruefDBGet(key);
-  if(!entry){toast('Zertifikat nicht gefunden.');return;}
-  window.open(URL.createObjectURL(entry.blob),'_blank');
+  const cur=(_pruefCache||{})[key];
+  if(!cur?._sbCertPath){toast('Kein Zertifikat hinterlegt.');return;}
+  const{data,error}=await _sb.storage.from('Fahrzeuge').createSignedUrl(cur._sbCertPath,3600);
+  if(error||!data?.signedUrl){toast('Zertifikat konnte nicht geöffnet werden.');return;}
+  window.open(data.signedUrl,'_blank');
 }
 
 async function deletePruefHistEintrag(key){
   if(!confirm('Eintrag aus der Historie löschen?'))return;
-  const all=loadPruefStatus();
-  delete all[key];
-  savePruefStatusData(all);
-  await pruefDBDelete(key);
+  const cur=(_pruefCache||{})[key];
+  if(cur?._sbCertPath){
+    await _sb.storage.from('Fahrzeuge').remove([cur._sbCertPath]);
+  }
+  const{error}=await _sb.from('pruef_status').delete().eq('key',key);
+  if(error){toast('Fehler beim Löschen: '+error.message);return;}
+  await _pruefSyncFromSupabase();
   toast('Eintrag gelöscht.');
   renderPruefHistorie();
 }
@@ -8440,9 +8802,7 @@ function hatDrohnenFunktion(s){return s&&(s.drohnen===true||_DROHNEN_ORTE.includ
 
 function openStdDetail(id){
   _stdDetailId=id;_stdDetailIdLast=id;
-  const s=loadStandorte().find(x=>x.id===id);
-  if(hatDrohnenFunktion(s)) _stdDetailTab='begehungen';
-  else if(_stdDetailTab==='begehungen') _stdDetailTab='details';
+  _stdDetailTab='details';
   document.getElementById('std-view-list').style.display='none';
   document.getElementById('std-view-detail').style.display='';
   renderStdDetail();
@@ -8456,12 +8816,492 @@ function showStdList(){
 }
 function closeStdDetail(){showStdList();}
 
+let _stdDocTab='arbeitsanweisungen';
+function switchStdDocTab(tab){
+  if(tab==='genehmigungen'){
+    // Nur anzeigen, nicht aktivierbar als normaler Tab
+    _stdDocTab=tab;
+  } else {
+    _stdDocTab=tab;
+  }
+  ['arbeitsanweisungen','prozessdarstellungen','nachweise','genehmigungen'].forEach(t=>{
+    const el=document.getElementById('stdDocTab-'+t);
+    if(el)el.style.display=t===tab?'block':'none';
+  });
+  document.querySelectorAll('[data-docTab]').forEach(btn=>{
+    const isActive=btn.dataset.docTab===tab&&tab!=='genehmigungen';
+    btn.style.borderBottomColor=isActive?'var(--navy)':'transparent';
+    btn.style.color=isActive?'var(--navy)':(btn.dataset.docTab==='genehmigungen'?'#94a3b8':'var(--muted)');
+    btn.style.fontWeight=isActive?'700':'600';
+  });
+  // Alte Liste ausblenden
+  const dl=document.getElementById('stdDocList');
+  const de=document.getElementById('stdDocEmpty');
+  if(dl)dl.style.display='none';
+  if(de)de.style.display='none';
+  if(tab!=='genehmigungen') renderStdDocTabContent(tab);
+}
+function renderStdDocTabContent(tab){
+  const el=document.getElementById('stdDocTab-'+tab);
+  if(!el)return;
+  const labels={
+    arbeitsanweisungen:'Arbeitsanweisungen',
+    prozessdarstellungen:'Prozessdarstellungen',
+    nachweise:'Nachweise & Prüfungen'
+  };
+  const vorschlaege={
+    arbeitsanweisungen:[
+      'Annahmekontrolle — was wird angenommen, was nicht',
+      'Verhalten bei Gefahrstoffen / Fehlwürfen',
+      'Sicherheitsanweisungen für den Betrieb',
+      'Notfallplan & Brandschutzmaßnahmen',
+      'Einweisung neue Mitarbeiter'
+    ],
+    prozessdarstellungen:[
+      'Materialfluss & Sortierablauf',
+      'Zufahrts- und Stellplatzplan',
+      'Ablaufplan Annahme & Übergabe',
+      'Verantwortlichkeiten & Organigramm'
+    ],
+    nachweise:[
+      'Gefährdungsbeurteilung',
+      'Waagenprüfung / Eichnachweis',
+      'Prüfberichte technische Anlagen',
+      'Überwachungsprotokolle',
+      'Entsorgungsnachweise / Begleitscheine'
+    ]
+  };
+  const items=vorschlaege[tab]||[];
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">${labels[tab]}</div>
+      <button class="btn btn-ghost" style="font-size:12px;padding:7px 16px" onclick="openStdDocModal()">+ Dokument hinzufügen</button>
+    </div>
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:16px">
+      <div style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid var(--line);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Vorschläge für diesen Bereich</div>
+      ${items.map(v=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #f0f3f7">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span style="font-size:12.5px;color:var(--muted);font-style:italic">${v}</span>
+          <span style="margin-left:auto;font-size:10px;background:#f1f5f9;color:#94a3b8;padding:1px 8px;border-radius:10px;font-weight:600;white-space:nowrap">Noch nicht hinterlegt</span>
+        </div>`).join('')}
+    </div>
+    <div id="stdDocSubList-${tab}" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div id="stdDocSubEmpty-${tab}" style="color:var(--muted);font-size:13px;text-align:center;padding:24px;background:var(--bg);border-radius:8px;display:none">Noch keine Dokumente in diesem Bereich.</div>`;
+}
+let _stdPersonalTab='uebersicht';
+let _maCache=[],_aufgabenCache=[],_wzMgmtCache=[],_urlaubMgmtCache=[],_einstCache={};
+async function renderStdPersonalTab(){
+  const cont=document.getElementById('stdPersonalContent');
+  if(!cont)return;
+  await loadPersonalData(_stdDetailId);
+  _renderPersonalLayout(cont);
+  _renderPersonalSubTab(_stdPersonalTab);
+}
+
+async function loadPersonalData(standortId){
+  const[{data:ma},{data:af},{data:wz},{data:ul},{data:es}]=await Promise.all([
+    _sb.from('mitarbeiter').select('*').eq('standort_id',standortId).eq('aktiv',true).order('name'),
+    _sb.from('aufgaben').select('*').eq('standort_id',standortId).order('created_at',{ascending:false}),
+    _sb.from('wochenzettel').select('*,mitarbeiter(name)').order('woche_start',{ascending:false}),
+    _sb.from('urlaub').select('*,mitarbeiter(name)').order('created_at',{ascending:false}),
+    _sb.from('einstellungen').select('*')
+  ]);
+  _maCache=ma||[];
+  _aufgabenCache=af||[];
+  const maIds=new Set(_maCache.map(m=>m.id));
+  _wzMgmtCache=(wz||[]).filter(w=>maIds.has(w.mitarbeiter_id));
+  _urlaubMgmtCache=(ul||[]).filter(u=>maIds.has(u.mitarbeiter_id));
+  _einstCache={};(es||[]).forEach(e=>{_einstCache[e.key]=e.value;});
+}
+
+function _renderPersonalLayout(cont){
+  const tabs=[
+    {id:'uebersicht',label:'Übersicht'},
+    {id:'mitarbeiter',label:'Mitarbeiter'},
+    {id:'aufgaben',label:'Aufgaben'},
+    {id:'wochenzettel',label:'Wochenzettel'},
+    {id:'urlaub',label:'Urlaub'},
+    {id:'einstellungen',label:'Einstellungen'},
+  ];
+  const nav=tabs.map(t=>`<button onclick="switchStdPersonalSubTab('${t.id}')" data-ptab="${t.id}"
+    style="padding:9px 14px;border:none;border-bottom:2px solid ${t.id===_stdPersonalTab?'var(--navy)':'transparent'};background:none;font-size:12px;font-weight:${t.id===_stdPersonalTab?700:600};color:${t.id===_stdPersonalTab?'var(--navy)':'var(--muted)'};cursor:pointer;font-family:var(--sans);margin-bottom:-2px;white-space:nowrap;transition:color .12s">${t.label}</button>`).join('');
+  cont.innerHTML=`<div style="display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:18px;flex-wrap:wrap;overflow-x:auto">${nav}</div><div id="stdPersMain"></div>`;
+}
+
+function switchStdPersonalSubTab(tab){
+  _stdPersonalTab=tab;
+  document.querySelectorAll('[data-ptab]').forEach(b=>{
+    const on=b.dataset.ptab===tab;
+    b.style.borderBottomColor=on?'var(--navy)':'transparent';
+    b.style.fontWeight=on?'700':'600';
+    b.style.color=on?'var(--navy)':'var(--muted)';
+  });
+  _renderPersonalSubTab(tab);
+}
+
+function _renderPersonalSubTab(tab){
+  const c=document.getElementById('stdPersMain');if(!c)return;
+  if(tab==='uebersicht')c.innerHTML=_persUebersicht();
+  else if(tab==='mitarbeiter')c.innerHTML=_persMitarbeiter();
+  else if(tab==='aufgaben')c.innerHTML=_persAufgaben();
+  else if(tab==='wochenzettel')c.innerHTML=_persWochenzettel();
+  else if(tab==='urlaub')c.innerHTML=_persUrlaub();
+  else if(tab==='einstellungen')c.innerHTML=_persEinstellungen();
+}
+
+/* ── ÜBERSICHT ── */
+function _persUebersicht(){
+  const offeneAf=_aufgabenCache.filter(a=>a.status==='offen').length;
+  const pendUrlaub=_urlaubMgmtCache.filter(u=>u.status==='beantragt').length;
+  const yr=new Date().getFullYear();
+  const thisWeekMon=_persGetMonday(0);
+  const wzThisWeek=_wzMgmtCache.filter(w=>w.woche_start===thisWeekMon&&w.status==='eingereicht').length;
+  const kpiCard=(val,lbl,icon,color='var(--navy)')=>`
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:38px;height:38px;background:${color}18;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${icon}</div>
+      <div><div style="font-size:22px;font-weight:700;color:${color};line-height:1">${val}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${lbl}</div></div>
+    </div>`;
+  const link=`<a href="mitarbeiter.html" target="_blank" style="display:inline-flex;align-items:center;gap:7px;padding:10px 16px;background:var(--navy);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;margin-top:4px">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    Mitarbeiter-Portal öffnen</a>`;
+  return`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      ${kpiCard(_maCache.length,'Aktive Mitarbeiter',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`)}
+      ${kpiCard(offeneAf,'Offene Aufgaben',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${offeneAf>0?'#ea580c':'var(--navy)'}" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,offeneAf>0?'#ea580c':'var(--navy)')}
+      ${kpiCard(wzThisWeek,'Wochenzettel (diese Woche)',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`)}
+      ${kpiCard(pendUrlaub,'Offene Urlaubsanträge',`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${pendUrlaub>0?'#dc2626':'var(--navy)'}" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>`,pendUrlaub>0?'#dc2626':'var(--navy)')}
+    </div>
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Mitarbeiter-Portal</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Die Mitarbeiter können unter <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:12px">mitarbeiter.html</code> ihre Aufgaben, Wochenzettel und Urlaub verwalten.</div>
+      ${link}
+    </div>`;
+}
+
+/* ── MITARBEITER ── */
+function _persMitarbeiter(){
+  const yr=new Date().getFullYear();
+  const rows=_maCache.map(m=>{
+    const gen=_urlaubMgmtCache.filter(u=>u.mitarbeiter_id===m.id&&u.status==='genehmigt'&&u.jahr===yr).reduce((s,u)=>s+(u.arbeitstage||0),0);
+    const offen=(m.urlaub_anspruch||24)+(m.urlaub_vorjahr||0)-gen;
+    return`<div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;background:#eff6ff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--navy);flex-shrink:0">${(m.name||'?').charAt(0).toUpperCase()}</div>
+          <div><div style="font-size:14px;font-weight:700;color:var(--navy)">${h(m.name)}</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:1px">PIN: ${m.pin||'––'}</div></div>
+        </div>
+        <button onclick="openMaModal('${m.id}')" style="background:none;border:1.5px solid var(--line);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;font-family:var(--sans)">Bearbeiten</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px">
+        ${[['Anspruch',m.urlaub_anspruch||24],['Vorjahr',m.urlaub_vorjahr||0],['Genommen',gen],['Offen',offen]].map(([l,v])=>`
+          <div style="text-align:center;background:var(--bg);border-radius:7px;padding:7px 4px">
+            <div style="font-size:17px;font-weight:700;color:${l==='Offen'?'#1d4ed8':'var(--navy)'}">${v}</div>
+            <div style="font-size:9.5px;color:var(--muted);margin-top:1px">${l}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;}).join('');
+  return`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">Mitarbeiter · Urlaubskonto ${yr}</div>
+      <button onclick="openMaModal(null)" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Neu anlegen</button>
+    </div>
+    ${rows||'<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;font-style:italic">Noch keine Mitarbeiter angelegt.</div>'}
+    <div id="maModalWrap"></div>`;
+}
+
+function openMaModal(id){
+  const m=id?_maCache.find(x=>x.id===id):null;
+  document.getElementById('maModalWrap').innerHTML=`
+    <div style="margin-top:16px;background:var(--white);border:1.5px solid var(--navy);border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">${m?'Mitarbeiter bearbeiten':'Neuen Mitarbeiter anlegen'}</div>
+      <input type="hidden" id="maFormId" value="${m?.id||''}">
+      <div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Name</div>
+        <input id="maFormName" type="text" value="${h(m?.name||'')}" placeholder="Vor- und Nachname" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
+      <div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">4-stelliger PIN</div>
+        <input id="maFormPin" type="text" maxlength="4" value="${m?.pin||''}" placeholder="z.B. 1234" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Jahresanspruch (Tage)</div>
+          <input id="maFormAnspruch" type="number" value="${m?.urlaub_anspruch||24}" min="0" max="60" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
+        <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Übertrag Vorjahr</div>
+          <input id="maFormVorjahr" type="number" value="${m?.urlaub_vorjahr||0}" min="0" max="60" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="saveMa()" style="flex:2;background:var(--navy);color:#fff;border:none;border-radius:7px;padding:10px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">Speichern</button>
+        ${m?`<button onclick="deleteMa('${m.id}')" style="flex:1;background:none;border:1.5px solid #dc2626;color:#dc2626;border-radius:7px;padding:10px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer">Löschen</button>`:''}
+        <button onclick="document.getElementById('maModalWrap').innerHTML=''" style="flex:1;background:none;border:1.5px solid var(--line);color:var(--muted);border-radius:7px;padding:10px;font-family:var(--sans);font-size:13px;cursor:pointer">Abbrechen</button>
+      </div>
+    </div>`;
+}
+
+async function saveMa(){
+  const id=document.getElementById('maFormId')?.value;
+  const name=(document.getElementById('maFormName')?.value||'').trim();
+  const pin=(document.getElementById('maFormPin')?.value||'').trim();
+  const anspruch=parseInt(document.getElementById('maFormAnspruch')?.value)||24;
+  const vorjahr=parseInt(document.getElementById('maFormVorjahr')?.value)||0;
+  if(!name||!pin){toast('Name und PIN erforderlich');return;}
+  if(pin.length!==4||!/^\d+$/.test(pin)){toast('PIN muss genau 4 Ziffern sein');return;}
+  const payload={name,pin,urlaub_anspruch:anspruch,urlaub_vorjahr:vorjahr,standort_id:_stdDetailId,aktiv:true};
+  let error;
+  if(id){({error}=await _sb.from('mitarbeiter').update(payload).eq('id',id));}
+  else{({error}=await _sb.from('mitarbeiter').insert(payload));}
+  if(error){toast('Fehler: '+error.message);return;}
+  toast('Mitarbeiter gespeichert ✓');
+  await loadPersonalData(_stdDetailId);
+  _renderPersonalSubTab('mitarbeiter');
+}
+
+async function deleteMa(id){
+  if(!confirm('Mitarbeiter wirklich löschen?'))return;
+  const{error}=await _sb.from('mitarbeiter').update({aktiv:false}).eq('id',id);
+  if(error){toast('Fehler: '+error.message);return;}
+  toast('Mitarbeiter deaktiviert');
+  await loadPersonalData(_stdDetailId);
+  _renderPersonalSubTab('mitarbeiter');
+}
+
+/* ── AUFGABEN ── */
+function _persAufgaben(){
+  const open=_aufgabenCache.filter(a=>a.status==='offen');
+  const done=_aufgabenCache.filter(a=>a.status==='erledigt');
+  const prioMap={hoch:'#dc2626',normal:'#2563eb',niedrig:'#16a34a'};
+  const pTag=p=>`<span style="display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;background:${prioMap[p]||'#2563eb'}20;color:${prioMap[p]||'#2563eb'}">${p||'normal'}</span>`;
+  const row=a=>`<div style="padding:10px 0;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:600;color:${a.status==='erledigt'?'var(--muted)':'var(--navy)'};${a.status==='erledigt'?'text-decoration:line-through':''}">${h(a.titel)}</div>
+      ${a.beschreibung?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${h(a.beschreibung)}</div>`:''}
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap">
+        ${a.status==='offen'?pTag(a.prioritaet):'<span style="font-size:10.5px;color:var(--muted)">Erledigt von '+h(a.erledigt_von||'–')+'</span>'}
+        ${a.faellig_am?`<span style="font-size:10px;color:var(--muted)">Fällig: ${_fmtD(a.faellig_am)}</span>`:''}
+      </div>
+    </div>
+    <button onclick="deleteAufgabe('${a.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;flex-shrink:0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+    </button>
+  </div>`;
+  return`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">Aufgaben</div>
+      <button onclick="openAufgabeModal()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Neue Aufgabe</button>
+    </div>
+    <div id="aufgabeModalWrap"></div>
+    ${open.length?`<div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:0 16px;margin-bottom:12px">
+      <div style="padding:10px 0 0;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Offen (${open.length})</div>
+      ${open.map(row).join('')}</div>`:''}
+    ${done.length?`<div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:0 16px">
+      <div style="padding:10px 0 0;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Erledigt (${done.length})</div>
+      ${done.slice(0,10).map(row).join('')}</div>`:''}
+    ${!open.length&&!done.length?'<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;font-style:italic">Noch keine Aufgaben angelegt.</div>':''}`;
+}
+
+function openAufgabeModal(){
+  document.getElementById('aufgabeModalWrap').innerHTML=`
+    <div style="background:var(--white);border:1.5px solid var(--navy);border-radius:10px;padding:16px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">Neue Aufgabe anlegen</div>
+      <div style="margin-bottom:9px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Titel *</div>
+        <input id="afTitel" type="text" placeholder="Aufgabentitel…" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
+      <div style="margin-bottom:9px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Beschreibung</div>
+        <input id="afBeschr" type="text" placeholder="Optional…" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Priorität</div>
+          <select id="afPrio" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;color:var(--navy);background:var(--white)">
+            <option value="normal">Normal</option><option value="hoch">Hoch</option><option value="niedrig">Niedrig</option></select></div>
+        <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Fällig am (opt.)</div>
+          <input id="afFaellig" type="date" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;color:var(--navy)"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="saveAufgabe()" style="flex:2;background:var(--navy);color:#fff;border:none;border-radius:7px;padding:10px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">Anlegen</button>
+        <button onclick="document.getElementById('aufgabeModalWrap').innerHTML=''" style="flex:1;background:none;border:1.5px solid var(--line);color:var(--muted);border-radius:7px;padding:10px;font-family:var(--sans);font-size:13px;cursor:pointer">Abbrechen</button>
+      </div>
+    </div>`;
+}
+
+async function saveAufgabe(){
+  const titel=(document.getElementById('afTitel')?.value||'').trim();
+  if(!titel){toast('Titel erforderlich');return;}
+  const{error}=await _sb.from('aufgaben').insert({
+    titel,beschreibung:document.getElementById('afBeschr')?.value||'',
+    prioritaet:document.getElementById('afPrio')?.value||'normal',
+    faellig_am:document.getElementById('afFaellig')?.value||null,
+    standort_id:_stdDetailId,erstellt_von:'Management',status:'offen'
+  });
+  if(error){toast('Fehler: '+error.message);return;}
+  toast('Aufgabe angelegt ✓');
+  await loadPersonalData(_stdDetailId);
+  _renderPersonalSubTab('aufgaben');
+}
+
+async function deleteAufgabe(id){
+  if(!confirm('Aufgabe löschen?'))return;
+  const{error}=await _sb.from('aufgaben').delete().eq('id',id);
+  if(error){toast('Fehler: '+error.message);return;}
+  toast('Aufgabe gelöscht');
+  await loadPersonalData(_stdDetailId);
+  _renderPersonalSubTab('aufgaben');
+}
+
+/* ── WOCHENZETTEL ── */
+function _persGetMonday(off=0){
+  const n=new Date(),day=n.getDay()||7,m=new Date(n);
+  m.setDate(n.getDate()-(day-1)+off*7);m.setHours(0,0,0,0);return m.toISOString().slice(0,10);
+}
+function _persWochenzettel(){
+  const grouped={};
+  _wzMgmtCache.forEach(w=>{
+    const ma=w.mitarbeiter?.name||w.mitarbeiter_id;
+    if(!grouped[ma])grouped[ma]=[];
+    grouped[ma].push(w);
+  });
+  if(!Object.keys(grouped).length)return'<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;font-style:italic">Noch keine Wochenzettel eingereicht.</div>';
+  const keys=['mo','di','mi','do','fr','sa'];
+  return`<div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Eingereichte Wochenzettel</div>`+Object.entries(grouped).map(([name,sheets])=>`
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden">
+      <div style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--navy)">${h(name)}</div>
+      ${sheets.filter(w=>w.status==='eingereicht').slice(0,8).map(w=>{
+        const t=keys.reduce((s,k)=>s+(parseFloat(w[k+'_std'])||0),0);
+        const bemRows=keys.filter(k=>w[k+'_bem']).map(k=>`<span style="font-size:11px;color:var(--muted)">${k.toUpperCase()}: ${h(w[k+'_bem'])}</span>`);
+        return`<div style="padding:10px 16px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div><div style="font-size:12.5px;font-weight:600;color:var(--navy)">KW ${w.kw} · ${w.jahr} &nbsp;<span style="font-size:11px;color:var(--muted)">${_fmtD(w.woche_start)}</span></div>
+            ${bemRows.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">${bemRows.join('')}</div>`:''}</div>
+            <div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700;color:var(--navy)">${t.toFixed(1).replace('.',',')} Std</div>
+            <div style="font-size:10px;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:8px;font-weight:700;margin-top:2px">Eingereicht</div></div>
+          </div></div>`;}).join('')}
+    </div>`).join('');
+}
+
+/* ── URLAUB ── */
+function _persUrlaub(){
+  const pending=_urlaubMgmtCache.filter(u=>u.status==='beantragt');
+  const rest=_urlaubMgmtCache.filter(u=>u.status!=='beantragt');
+  const statusMap={beantragt:'Beantragt',genehmigt:'Genehmigt',abgelehnt:'Abgelehnt'};
+  const badgeColor={beantragt:'#854d0e,#fef9c3',genehmigt:'#15803d,#dcfce7',abgelehnt:'#b91c1c,#fee2e2'};
+  const badge=s=>{const[c,bg]=(badgeColor[s]||'#64748b,#f1f5f9').split(',');return`<span style="background:${bg};color:${c};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${statusMap[s]||s}</span>`;};
+  const row=(u,canDecide)=>`
+    <div style="padding:11px 16px;border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--navy)">${h(u.mitarbeiter?.name||'–')}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${_fmtD(u.von_datum)} – ${_fmtD(u.bis_datum)} · ${u.arbeitstage} AT · ${u.jahr}</div>
+          ${u.notiz?`<div style="font-size:11.5px;color:var(--muted);font-style:italic;margin-top:2px">${h(u.notiz)}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${badge(u.status)}
+          ${canDecide?`
+            <button onclick="genehmigenUrlaub('${u.id}')" style="background:#dcfce7;color:#15803d;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--sans)">✓ Genehmigen</button>
+            <button onclick="ablehnenUrlaub('${u.id}')" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--sans)">✕ Ablehnen</button>`:''}
+        </div>
+      </div>
+    </div>`;
+  return`
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Urlaubsanträge</div>
+    ${pending.length?`
+    <div style="background:var(--white);border:1.5px solid #fbbf24;border-radius:10px;overflow:hidden;margin-bottom:14px">
+      <div style="padding:10px 16px;background:#fffbeb;border-bottom:1px solid #fde68a;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px">⏳ Zur Entscheidung (${pending.length})</div>
+      ${pending.map(u=>row(u,true)).join('')}
+    </div>`:'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#15803d;margin-bottom:14px">Keine offenen Anträge ✓</div>'}
+    ${rest.length?`
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;overflow:hidden">
+      <div style="padding:10px 16px;background:#f8fafc;border-bottom:1px solid var(--line);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Entschieden</div>
+      ${rest.slice(0,20).map(u=>row(u,false)).join('')}
+    </div>`:''}`;
+}
+
+async function genehmigenUrlaub(id){
+  const{error}=await _sb.from('urlaub').update({status:'genehmigt',entschieden_am:new Date().toISOString()}).eq('id',id);
+  if(error){toast('Fehler: '+error.message);return;}
+  toast('Urlaub genehmigt ✓');
+  await loadPersonalData(_stdDetailId);_renderPersonalSubTab('urlaub');
+}
+async function ablehnenUrlaub(id){
+  if(!confirm('Urlaubsantrag ablehnen?'))return;
+  const{error}=await _sb.from('urlaub').update({status:'abgelehnt',entschieden_am:new Date().toISOString()}).eq('id',id);
+  if(error){toast('Fehler: '+error.message);return;}
+  toast('Urlaub abgelehnt');
+  await loadPersonalData(_stdDetailId);_renderPersonalSubTab('urlaub');
+}
+
+/* ── EINSTELLUNGEN ── */
+function _persEinstellungen(){
+  const get=k=>_einstCache[k]||'';
+  return`
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Einstellungen · Personal & Benachrichtigungen</div>
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px">E-Mail Benachrichtigung</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Manager E-Mail (erhält Urlaubsanträge)</div>
+        <input id="cfgEmail" type="email" value="${get('manager_email')}" placeholder="chef@diekjobst.de" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)">
+      </div>
+    </div>
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">EmailJS Konfiguration</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Für den automatischen E-Mail-Versand. Kostenloses Konto unter <strong>emailjs.com</strong> anlegen → Gmail verbinden → Template erstellen mit den Variablen: <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:11px">to_email, ma_name, von_datum, bis_datum, arbeitstage, notiz</code></div>
+      <div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Service ID</div>
+        <input id="cfgSvcId" type="text" value="${get('emailjs_service_id')}" placeholder="service_xxxxxxx" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
+      <div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Template ID</div>
+        <input id="cfgTplId" type="text" value="${get('emailjs_template_id')}" placeholder="template_xxxxxxx" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
+      <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Public Key</div>
+        <input id="cfgPubKey" type="text" value="${get('emailjs_public_key')}" placeholder="XXXXXXXXXXXXXXXXXXXXXX" style="border:1.5px solid var(--line);border-radius:7px;padding:8px 11px;font-family:var(--sans);font-size:13px;width:100%;outline:none;color:var(--navy)"></div>
+    </div>
+    <button onclick="saveEinstellungen()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:12px 20px;font-family:var(--sans);font-size:13.5px;font-weight:700;cursor:pointer;width:100%">Einstellungen speichern</button>`;
+}
+
+async function saveEinstellungen(){
+  const pairs=[
+    ['manager_email',document.getElementById('cfgEmail')?.value||''],
+    ['emailjs_service_id',document.getElementById('cfgSvcId')?.value||''],
+    ['emailjs_template_id',document.getElementById('cfgTplId')?.value||''],
+    ['emailjs_public_key',document.getElementById('cfgPubKey')?.value||''],
+  ];
+  for(const[key,value]of pairs){
+    if(!value)continue;
+    await _sb.from('einstellungen').upsert({key,value,updated_at:new Date().toISOString()},{onConflict:'key'});
+    _einstCache[key]=value;
+  }
+  toast('Einstellungen gespeichert ✓');
+}
+
+function _fmtD(s){if(!s)return'';const[y,m,d]=(s||'').slice(0,10).split('-');return`${d}.${m}.${y}`;}
+function h(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function renderStdTankTab(){
+  const cont=document.getElementById('stdTankContent');
+  if(!cont)return;
+  const vorschlaege=[
+    'Monatliche Tanknachweise hochladen (je Fahrzeug)',
+    'Bestandsübersicht Diesel & AdBlue',
+    'Lieferscheine Diesellieferungen',
+    'Prüfberichte Tank & Anlage',
+    'Abrechnungsbelege Tankstelle'
+  ];
+  cont.innerHTML=`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;background:var(--white);border:1px solid var(--line);border-radius:12px;margin-bottom:16px">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:14px"><path d="M3 22V8l9-6 9 6v14"/><rect x="9" y="14" width="6" height="8"/><path d="M9 10h6"/></svg>
+      <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px">Tank — In Bearbeitung</div>
+      <div style="font-size:12px;color:var(--muted);max-width:320px;line-height:1.6">Monatliche Tanknachweise der betriebseigenen Tankstelle — wird gerade eingerichtet.</div>
+    </div>
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;overflow:hidden">
+      <div style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid var(--line);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Geplante Funktionen</div>
+      ${vorschlaege.map(v=>`<div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #f0f3f7">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><path d="M3 22h18M5 22V8l7-5 7 5v14"/><path d="M10 22V16h4v6"/></svg>
+        <span style="font-size:12.5px;color:var(--muted);font-style:italic">${v}</span>
+        <span style="margin-left:auto;font-size:10px;background:#f1f5f9;color:#94a3b8;padding:1px 8px;border-radius:10px;font-weight:600;white-space:nowrap">Demnächst</span>
+      </div>`).join('')}
+    </div>`;
+}
+
 function switchStdTab(tab){
   const s=loadStandorte().find(x=>x.id===_stdDetailId);
   const drohnen=hatDrohnenFunktion(s);
   if(tab==='begehungen'&&!drohnen) tab='details';
   _stdDetailTab=tab;
-  ['Details','Begehungen','Dokumente'].forEach(n=>{
+  ['Details','Begehungen','Dokumente','Personal','Tank'].forEach(n=>{
     const el=document.getElementById('stdTab'+n);
     if(el)el.style.display=(n.toLowerCase()===tab)?'':'none';
   });
@@ -8471,6 +9311,8 @@ function switchStdTab(tab){
     {id:'details',label:'Details'},
     {id:'begehungen',label:'Drohnenaufnahmen'},
     {id:'dokumente',label:'Dokumente'},
+    {id:'personal',label:'Personal'},
+    {id:'tank',label:'Tank'},
   ];
   const tabs=allTabs.filter(t=>t.id!=='begehungen'||drohnen);
   bar.innerHTML=tabs.map(t=>{
@@ -8478,6 +9320,9 @@ function switchStdTab(tab){
     return`<button onclick="switchStdTab('${t.id}')" style="padding:10px 18px;border:none;border-bottom:2px solid ${active?'var(--navy)':'transparent'};background:none;font-size:13px;font-weight:${active?700:500};color:${active?'var(--navy)':'var(--muted)'};cursor:pointer;font-family:var(--sans);margin-bottom:-2px;transition:color .12s">${t.label}</button>`;
   }).join('');
   if(tab==='begehungen'&&drohnen)renderStdBegFolderSection();
+  if(tab==='dokumente')switchStdDocTab(_stdDocTab||'arbeitsanweisungen');
+  if(tab==='personal')renderStdPersonalTab();
+  if(tab==='tank')renderStdTankTab();
 }
 
 function renderStdDetail(){
@@ -8629,21 +9474,22 @@ async function renderStdBegFolderSection(){
   const cont=document.getElementById('stdBegFolderSection');
   if(!cont)return;
   const s=loadStandorte().find(x=>x.id===_stdDetailId);
-  const ortName=s?.ort||'Standort';
-  const f=s?.frist||{};
+  if(!s)return;
+  const ortName=s.ort||'Standort';
+  const f=s.frist||{};
   const today=new Date();today.setHours(0,0,0,0);
   const thisMonth=today.toISOString().slice(0,7);
-  const fristDone=(s?.begehungen||[]).some(b=>b.datum?.startsWith(thisMonth));
+  const fristDone=(s.begehungen||[]).some(b=>b.datum?.startsWith(thisMonth));
+
+  /* Frist-Banner */
   let fristBanner='';
   if(f.aktiv&&!fristDone){
     const fristDate=new Date(today.getFullYear(),today.getMonth(),f.tag||1);
     const overdue=today>=fristDate;
     const dDiff=overdue?Math.floor((today-fristDate)/86400000):Math.ceil((fristDate-today)/86400000);
     const statusText=overdue?(dDiff===0?'Heute fällig':`${dDiff}d überfällig`):`in ${dDiff}d fällig`;
-    const bg=overdue?'#fef2f2':'#fffbeb';
-    const border=overdue?'#fca5a5':'#fde68a';
-    const color=overdue?'#dc2626':'#d97706';
-    fristBanner=`<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:${bg};border:1px solid ${border};border-radius:10px;margin-bottom:20px">
+    const bg=overdue?'#fef2f2':'#fffbeb',border=overdue?'#fca5a5':'#fde68a',color=overdue?'#dc2626':'#d97706';
+    fristBanner=`<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:${bg};border:1px solid ${border};border-radius:10px;margin-bottom:18px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:${color}">${f.beschreibung||'Drohnenaufnahmen'} — ${statusText}</div>
@@ -8656,42 +9502,165 @@ async function renderStdBegFolderSection(){
     </div>`;
   }
 
-  // Monatsübersicht aus Supabase
-  const dateien=s?.drohnenDateien||[];
+  /* Historie gruppiert nach Monat */
+  const dateien=s.drohnenDateien||[];
   const byMonth={};
   dateien.forEach(d=>{if(!byMonth[d.monat])byMonth[d.monat]=[];byMonth[d.monat].push(d);});
   const months=Object.keys(byMonth).sort((a,b)=>b.localeCompare(a));
-  const monthsHtml=months.length?months.map(m=>{
+
+  const monthRows=months.length?months.map(m=>{
     const count=byMonth[m].length;
     const [yr,mo]=m.split('-');
     const label=new Date(+yr,+mo-1,1).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
-    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--white);border:1px solid var(--line);border-radius:9px;margin-bottom:8px">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--navy)">${label}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${count} Bild${count!==1?'er':''}</div>
+    const isThis=m===thisMonth;
+    return`<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:${isThis?'#f0fdf4':'var(--white)'};cursor:pointer" onclick="toggleDrohnenMonat('${m}','${s.id}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${isThis?'#16a34a':'var(--muted)'}" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div>
+            <span style="font-size:13px;font-weight:700;color:var(--navy)">${label}</span>
+            ${isThis?`<span style="margin-left:8px;font-size:10px;font-weight:700;background:#dcfce7;color:#16a34a;padding:1px 7px;border-radius:10px">Aktuell</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:11px;color:var(--muted)">${count} Bild${count!==1?'er':''}</span>
+          <svg id="drohnen-chev-${m}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
       </div>
-      <button onclick="openDrohnenGalerie('${m}','${s.id}')" title="Bilder anzeigen" style="background:none;border:1.5px solid var(--line);border-radius:7px;padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy);font-family:var(--sans)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-        Öffnen
-      </button>
+      <div id="drohnen-month-${m}" style="display:none;padding:14px 16px;border-top:1px solid var(--line);background:#fafbfc">
+        <div id="drohnen-grid-${m}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">
+          <div style="color:var(--muted);font-size:12px;grid-column:1/-1;text-align:center;padding:20px 0">Lade Bilder…</div>
+        </div>
+      </div>
     </div>`;
-  }).join(''):`<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Noch keine Aufnahmen hochgeladen.</div>`;
+  }).join(''):`<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;background:var(--white);border:1px solid var(--line);border-radius:10px">Noch keine Aufnahmen hochgeladen.</div>`;
 
   cont.innerHTML=fristBanner+`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:13px;font-weight:700;color:var(--navy)">Drohnenaufnahmen — ${ortName}</div>
-      <label style="display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--navy);color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--sans)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Bilder hochladen
-        <input type="file" accept="image/*" multiple style="display:none" onchange="uploadDrohnenBilder(this.files,'${s?.id}')">
-      </label>
+    <!-- Upload-Bereich -->
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Neue Aufnahmen hochladen</div>
+      <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+        <div style="flex-shrink:0">
+          <label style="font-size:11px;font-weight:600;color:var(--navy);display:block;margin-bottom:4px">Monat</label>
+          <input type="month" id="drohnen-upload-monat" value="${thisMonth}" style="padding:7px 10px;border:1.5px solid var(--line);border-radius:6px;font-size:13px;font-family:var(--mono);color:var(--navy);background:var(--bg)">
+        </div>
+        <div style="flex:1;min-width:240px">
+          <label style="font-size:11px;font-weight:600;color:var(--navy);display:block;margin-bottom:4px">Bilder</label>
+          <div id="drohnen-dropzone-${s.id}"
+            ondragover="event.preventDefault();this.style.borderColor='var(--navy)';this.style.background='#f0f4ff'"
+            ondragleave="this.style.borderColor='var(--line)';this.style.background='var(--bg)'"
+            ondrop="event.preventDefault();this.style.borderColor='var(--line)';this.style.background='var(--bg)';uploadDrohnenBilder(event.dataTransfer.files,'${s.id}')"
+            style="border:2px dashed var(--line);border-radius:8px;padding:20px;background:var(--bg);text-align:center;transition:border-color .15s,background .15s;cursor:pointer"
+            onclick="document.getElementById('drohnen-file-input-${s.id}').click()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" style="margin-bottom:6px"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            <div style="font-size:12px;font-weight:600;color:var(--navy)">Bilder hier reinziehen</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px">oder klicken zum Auswählen</div>
+            <input type="file" id="drohnen-file-input-${s.id}" accept="image/*" multiple style="display:none" onchange="uploadDrohnenBilder(this.files,'${s.id}')">
+          </div>
+        </div>
+      </div>
     </div>
-    <div id="drohnenMonthsList">${monthsHtml}</div>`;
+
+    <!-- Historie -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">Historie — ${ortName}</div>
+      ${months.length?`<button onclick="drohnenGesamtuebersicht('${s.id}')" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--white);border:1.5px solid var(--line);border-radius:7px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;font-family:var(--sans)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Gesamtübersicht
+      </button>`:''}
+    </div>
+    <div id="drohnenMonthsList">${monthRows}</div>`;
+}
+
+async function toggleDrohnenMonat(monat, standortId){
+  const wrap=document.getElementById(`drohnen-month-${monat}`);
+  const chev=document.getElementById(`drohnen-chev-${monat}`);
+  if(!wrap)return;
+  const isOpen=wrap.style.display!=='none';
+  if(isOpen){wrap.style.display='none';if(chev)chev.style.transform='';return;}
+  wrap.style.display='block';
+  if(chev)chev.style.transform='rotate(180deg)';
+  const grid=document.getElementById(`drohnen-grid-${monat}`);
+  if(!grid)return;
+  const s=loadStandorte().find(x=>x.id===standortId);
+  const alle=(s?.drohnenDateien||[]).filter(d=>d.monat===monat);
+  const getUrl=d=>{const{data}=_sb.storage.from('Drohnen').getPublicUrl(d.storage_path);return data?.publicUrl;};
+  const gesamt=alle.filter(d=>d.kategorie==='gesamtuebersicht');
+  const drauf=alle.filter(d=>!d.kategorie||d.kategorie==='draufsicht');
+  const seite=alle.filter(d=>d.kategorie==='seitenansicht');
+  if(!alle.length){grid.innerHTML=`<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Keine Bilder.</div>`;return;}
+  const imgCard=(d,h)=>`<div style="border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#fff">
+    <img src="${getUrl(d)}" loading="lazy" style="width:100%;height:${h}px;object-fit:cover;display:block;cursor:pointer" onclick="window.open('${getUrl(d)}','_blank')" title="${d.dateiname}">
+    <div style="padding:5px 8px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px">${d.dateiname}</div>
+      <button onclick="deleteDrohnenBild('${d.id}','${d.storage_path}','${monat}','${standortId}')" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:11px;padding:1px 3px;opacity:.4" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.4">✕</button>
+    </div>
+  </div>`;
+  const secLbl=(txt)=>`<div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:12px 0 6px">${txt}</div>`;
+  let html='';
+  if(gesamt.length){
+    html+=secLbl('Gesamtübersicht');
+    html+=`<div style="margin-bottom:4px">${gesamt.map(d=>`<div style="border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#fff;margin-bottom:6px">
+      <img src="${getUrl(d)}" loading="lazy" style="width:100%;max-height:260px;object-fit:contain;display:block;cursor:pointer;background:#f1f5f9" onclick="window.open('${getUrl(d)}','_blank')">
+      <div style="padding:5px 8px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:10px;color:var(--muted)">Zusammengesetzt aus ${drauf.length} Draufsicht${drauf.length!==1?'en':''}</div>
+        <button onclick="deleteDrohnenBild('${d.id}','${d.storage_path}','${monat}','${standortId}')" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:11px;padding:1px 3px;opacity:.4" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.4">✕</button>
+      </div>
+    </div>`).join('')}</div>`;
+  }
+  if(drauf.length){
+    html+=secLbl(`Draufsichten (${drauf.length})`);
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:4px">${drauf.map(d=>imgCard(d,100)).join('')}</div>`;
+  }
+  if(seite.length){
+    html+=secLbl(`Seitenansichten (${seite.length})`);
+    html+=`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">${seite.map(d=>imgCard(d,110)).join('')}</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+async function drohnenGesamtuebersicht(standortId){
+  const s=loadStandorte().find(x=>x.id===standortId);
+  if(!s)return;
+  const dateien=s.drohnenDateien||[];
+  const byMonth={};
+  dateien.forEach(d=>{if(!byMonth[d.monat])byMonth[d.monat]=[];byMonth[d.monat].push(d);});
+  const months=Object.keys(byMonth).sort((a,b)=>b.localeCompare(a));
+  const urls={};
+  for(const m of months){
+    urls[m]=byMonth[m].map(d=>{
+      const{data}=_sb.storage.from('Drohnen').getPublicUrl(d.storage_path);
+      return{url:data?.publicUrl,name:d.dateiname};
+    });
+  }
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+    <title>Drohnenaufnahmen – ${s.name}</title>
+    <style>body{font-family:system-ui,sans-serif;padding:32px;color:#1e243a;max-width:1100px;margin:0 auto}
+    h1{font-size:22px;margin-bottom:4px}h2{font-size:15px;font-weight:700;margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid #e2e8f0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+    .img-wrap{border-radius:8px;overflow:hidden;border:1px solid #e2e8f0}
+    .img-wrap img{width:100%;height:150px;object-fit:cover;display:block}
+    .img-name{font-size:10px;color:#64748b;padding:5px 8px}
+    .meta{font-size:13px;color:#64748b;margin-bottom:28px}
+    @media print{h2{break-before:auto}button{display:none}}
+    </style></head><body>
+    <button onclick="window.print()" style="float:right;padding:8px 18px;background:#1e243a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600">Drucken / PDF</button>
+    <h1>Drohnenaufnahmen — ${s.name}</h1>
+    <div class="meta">${s.ort}${s.adresse?' · '+s.adresse:''} · Erstellt ${new Date().toLocaleDateString('de-DE')}</div>
+    ${months.map(m=>{
+      const[yr,mo]=m.split('-');
+      const label=new Date(+yr,+mo-1,1).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+      return`<h2>${label} — ${urls[m].length} Bild${urls[m].length!==1?'er':''}</h2>
+        <div class="grid">${urls[m].map(u=>`<div class="img-wrap"><img src="${u.url}" loading="lazy"><div class="img-name">${u.name}</div></div>`).join('')}</div>`;
+    }).join('')}
+    </body></html>`);
+  w.document.close();
 }
 
 async function uploadDrohnenBilder(files,standortId){
   if(!files||!files.length||!standortId)return;
-  const monat=new Date().toISOString().slice(0,7);
+  const monat=document.getElementById('drohnen-upload-monat')?.value||new Date().toISOString().slice(0,7);
   const toastEl=document.createElement('div');
   toastEl.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999';
   toastEl.textContent='Bilder werden hochgeladen…';
@@ -8840,6 +9809,54 @@ async function saveBegToFolder(){
   }catch(e){alert('Fehler beim Speichern: '+e.message);}
 }
 
+async function saveBegToSupabase(){
+  const datum=document.getElementById('stdBegDatum').value;
+  if(!datum){alert('Bitte ein Datum auswählen.');return;}
+  const standortId=_stdDetailId;
+  if(!standortId)return;
+  const monat=datum.slice(0,7);
+  const notiz=(document.getElementById('stdBegNotiz')?.value||'').trim();
+  const toastEl=document.createElement('div');
+  toastEl.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999';
+  toastEl.textContent='Wird gespeichert …';
+  document.body.appendChild(toastEl);
+  let ok=0;
+  const insertRec=async(path,name,kat)=>{
+    await _sb.from('drohnen_dateien').insert({standort_id:standortId,monat,dateiname:name,storage_path:path,kategorie:kat});
+  };
+  /* Gesamtübersicht */
+  if(_begGesamtData){
+    const blob=dataURLtoBlob(_begGesamtData);
+    const path=`${standortId}/${monat}/gesamtuebersicht.jpg`;
+    const{error}=await _sb.storage.from('Drohnen').upload(path,blob,{upsert:true,contentType:'image/jpeg'});
+    if(!error){await insertRec(path,'Gesamtübersicht.jpg','gesamtuebersicht');ok++;}
+  }
+  /* Draufsichten */
+  for(let i=0;i<_begDrauf.length;i++){
+    const blob=dataURLtoBlob(_begDrauf[i].daten);
+    const name=`Draufsicht_${String(i+1).padStart(2,'0')}.jpg`;
+    const path=`${standortId}/${monat}/${name}`;
+    const{error}=await _sb.storage.from('Drohnen').upload(path,blob,{upsert:true,contentType:'image/jpeg'});
+    if(!error){await insertRec(path,_begDrauf[i].name||name,'draufsicht');ok++;}
+  }
+  /* Seitenansichten */
+  for(let i=0;i<_begSchraeg.length;i++){
+    const blob=dataURLtoBlob(_begSchraeg[i].daten);
+    const name=`Seite_${String(i+1).padStart(2,'0')}.jpg`;
+    const path=`${standortId}/${monat}/${name}`;
+    const{error}=await _sb.storage.from('Drohnen').upload(path,blob,{upsert:true,contentType:'image/jpeg'});
+    if(!error){await insertRec(path,_begSchraeg[i].name||name,'seitenansicht');ok++;}
+  }
+  /* Begehungs-Eintrag */
+  await _sb.from('begehungen').insert({standort_id:standortId,datum,notiz:notiz||null});
+  await _stdSyncFromSupabase();
+  closeStdBegModal();
+  toastEl.textContent=`✓ ${ok} Datei${ok!==1?'en':''} in Supabase gespeichert.`;
+  setTimeout(()=>toastEl.remove(),3000);
+  renderStdDetail();
+  renderStdBegFolderSection();
+}
+
 // ── Begehungen ──
 let _begDrauf=[],_begSchraeg=[],_begGesamtData=null,_begStep=1,_begOhneUebersicht=false;
 
@@ -8869,7 +9886,7 @@ function begGoToStep(n){
 function renderBegStepIndicator(){
   const bar=document.getElementById('begStepBar');
   if(!bar)return;
-  const steps=['Draufsichten','Zusammensetzen','Prüfen','Seitenansicht','Abschluss'];
+  const steps=['Draufsichten','Zusammensetzen','Prüfen','Seitenansichten','Abschluss'];
   let html='';
   steps.forEach((label,i)=>{
     const idx=i+1;
@@ -8910,7 +9927,7 @@ function renderBegModalFoot(){
     <button class="btn btn-primary" onclick="begGoToStep(5)">Weiter &#x2192;</button>`;
   }else if(_begStep===5){
     foot.innerHTML=`<button class="btn btn-ghost" onclick="begGoToStep(4)">&#x2190; Zurück</button>
-    <button class="btn btn-primary" onclick="saveBegToFolder()">Im Ordner speichern</button>`;
+    <button class="btn btn-primary" onclick="saveBegToSupabase()">In Supabase speichern</button>`;
   }
 }
 
@@ -8952,7 +9969,7 @@ function renderBegSummary(){
   const lines=[
     _begGesamtData?'&#x2713; Gesamtübersicht vorhanden':'&#x2014; Keine Gesamtübersicht',
     `${_begDrauf.length} Draufsicht${_begDrauf.length!==1?'en':''}`,
-    `${_begSchraeg.length} Schrägaufnahme${_begSchraeg.length!==1?'n':''}`,
+    `${_begSchraeg.length} Seitenansicht${_begSchraeg.length!==1?'en':''}`,
   ];
   card.innerHTML=lines.map(l=>`<div>${l}</div>`).join('');
 }
@@ -9153,7 +10170,7 @@ async function begAddDrauf(input){
   input.value='';renderBegGrids();
 }
 async function begAddSchraeg(input){
-  const files=Array.from(input.files).slice(0,2-_begSchraeg.length);
+  const files=Array.from(input.files).slice(0,4-_begSchraeg.length);
   for(const f of files){const daten=await compressImage(f,1400,1050,0.82);_begSchraeg.push({id:'ph_'+Math.random().toString(36).slice(2,8),name:f.name.replace(/\.[^.]+$/,''),daten});}
   input.value='';renderBegGrids();
 }
