@@ -101,17 +101,20 @@ body{font-family:var(--sans);background:var(--bg);color:var(--navy);min-height:1
 .wk-nav-btn:disabled{opacity:.3;cursor:default}
 .wk-lbl{font-size:14px;font-weight:700;color:var(--navy);text-align:center}
 .wk-sub{font-size:11.5px;color:var(--muted);text-align:center;margin-top:4px}
-.day-row{display:grid;grid-template-columns:42px 62px 60px 1fr;gap:8px;align-items:start;margin-bottom:10px}
+.day-row{display:grid;grid-template-columns:38px 52px 52px 66px 1fr;gap:7px;align-items:start;margin-bottom:10px}
 .day-lbl{font-size:13px;font-weight:700;color:var(--navy);padding-top:8px}
 .day-date{font-size:9.5px;color:var(--muted);margin-top:2px;font-weight:500}
 .day-std,.day-pause{border:1.5px solid var(--line);border-radius:8px;padding:8px;font-family:var(--sans);font-size:13px;color:var(--navy);text-align:center;width:100%;outline:none;background:var(--white);transition:border-color .12s}
 .day-std:focus,.day-pause:focus{border-color:var(--navy)}
-.day-bem{border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--navy);width:100%;outline:none;background:var(--white);transition:border-color .12s}
+.day-bem{border:1.5px solid var(--line);border-radius:8px;padding:8px 6px;font-family:var(--sans);font-size:11.5px;color:var(--navy);width:100%;outline:none;background:var(--white);transition:border-color .12s}
 .day-bem:focus{border-color:var(--navy)}
 .day-std[readonly],.day-pause[readonly],.day-bem[readonly],select.day-bem:disabled{background:var(--bg);color:var(--muted);cursor:default;border-color:transparent}
-.day-col-hdr{display:grid;grid-template-columns:42px 62px 60px 1fr;gap:8px;margin-bottom:6px}
+.day-notiz{border:1.5px solid var(--line);border-radius:8px;padding:7px 8px;font-family:var(--sans);font-size:11.5px;color:var(--navy);width:100%;outline:none;background:var(--white);transition:border-color .12s}
+.day-notiz:focus{border-color:var(--navy)}
+.day-notiz[readonly]{background:var(--bg);color:var(--muted);cursor:default;border-color:transparent}
+.day-col-hdr{display:grid;grid-template-columns:38px 52px 52px 66px 1fr;gap:7px;margin-bottom:6px}
 .day-col-hdr span{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center}
-.day-col-hdr span:first-child,.day-col-hdr span:last-child{text-align:left}
+.day-col-hdr span:first-child{text-align:left}
 .wk-total{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-radius:9px;margin-top:16px;margin-bottom:8px}
 .wk-total-lbl{font-size:12.5px;font-weight:600;color:var(--muted)}
 .wk-total-val{font-size:18px;font-weight:700;color:var(--navy)}
@@ -572,7 +575,8 @@ function renderWochenzettel(){
     mitarbeiter_id:_ma.id,woche_start:monStr,kw,jahr:year,
     mo_std:0,di_std:0,mi_std:0,do_std:0,fr_std:0,sa_std:0,
     mo_pause:0,di_pause:0,mi_pause:0,do_pause:0,fr_pause:0,sa_pause:0,
-    mo_bem:'',di_bem:'',mi_bem:'',do_bem:'',fr_bem:'',sa_bem:'',status:'entwurf'
+    mo_bem:'',di_bem:'',mi_bem:'',do_bem:'',fr_bem:'',sa_bem:'',
+    mo_notiz:'',di_notiz:'',mi_notiz:'',do_notiz:'',fr_notiz:'',sa_notiz:'',status:'entwurf'
   };
   const locked=sheet.status==='eingereicht';
   // Pre-fill approved vacation and sick days
@@ -602,17 +606,17 @@ function renderWochenzettel(){
     ?`<span class="badge b-eingereicht">${ICO_CHK}Eingereicht</span>`
     :`<span class="badge b-entwurf">Entwurf</span>`;
   const daysHtml=`
-    <div class="day-col-hdr"><span></span><span>Std</span><span>Pause</span><span>Status</span></div>
+    <div class="day-col-hdr"><span></span><span>Std</span><span>Pause</span><span>Status</span><span>Bemerkung</span></div>
     `+days.map(({k,l,d})=>`
     <div class="day-row">
       <div class="day-lbl">${l}<div class="day-date">${fmtShort(d)}</div></div>
       <input type="number" class="day-std" id="wz_${k}_std" value="${parseFloat(sheet[k+'_std'])||0}" min="0" max="24" step="0.5" ${locked?'readonly':''} oninput="updTotal()">
       <input type="number" class="day-pause" id="wz_${k}_pause" value="${parseInt(sheet[k+'_pause'])||0}" min="0" max="120" step="5" ${locked?'readonly':''} oninput="updTotal()">
-      <select class="day-bem" id="wz_${k}_bem" ${locked?'disabled':''}>
-        <option value="">–</option>
-        <option value="Urlaub"${sheet[k+'_bem']==='Urlaub'?' selected':''}>Urlaub</option>
-        <option value="Krank"${sheet[k+'_bem']==='Krank'?' selected':''}>Krank</option>
-      </select>
+      ${sheet[k+'_bem']==='Urlaub'
+        ?`<select class="day-bem" id="wz_${k}_bem" disabled><option value="Urlaub" selected>Urlaub</option></select>`
+        :`<select class="day-bem" id="wz_${k}_bem" ${locked?'disabled':''}><option value="">–</option><option value="Krank"${sheet[k+'_bem']==='Krank'?' selected':''}>Krank</option></select>`
+      }
+      <input type="text" class="day-notiz" id="wz_${k}_notiz" value="${esc(sheet[k+'_notiz']||'')}" placeholder="Bemerkung…" maxlength="80" ${locked?'readonly':''}>
     </div>`).join('');
   const histItems=_wzCache.filter(w=>w.status==='eingereicht'&&w.woche_start!==monStr).slice(0,6).map(w=>{
     const b=days.reduce((s,d)=>s+(parseFloat(w[d.k+'_std'])||0),0);
@@ -681,6 +685,7 @@ async function saveWz(submit){
     data[k+'_std']=parseFloat(document.getElementById('wz_'+k+'_std')?.value)||0;
     data[k+'_pause']=parseInt(document.getElementById('wz_'+k+'_pause')?.value)||0;
     data[k+'_bem']=document.getElementById('wz_'+k+'_bem')?.value||'';
+    data[k+'_notiz']=(document.getElementById('wz_'+k+'_notiz')?.value||'').trim();
   });
   const{data:res,error}=await _sb.from('wochenzettel').upsert(data,{onConflict:'mitarbeiter_id,woche_start'}).select().single();
   if(error){toast('Fehler: '+error.message);return;}
@@ -701,17 +706,13 @@ async function saveWz(submit){
     const groups=[];let cur=null;
     dayDates.forEach(({k,date})=>{
       const bem=data[k+'_bem'];
-      if(bem==='Urlaub'||bem==='Krank'){
-        if(cur&&cur.type===bem){cur.bis=date;cur.count++;}
-        else{cur={type:bem,von:date,bis:date,count:1};groups.push(cur);}
+      if(bem==='Krank'){
+        if(cur){cur.bis=date;cur.count++;}
+        else{cur={von:date,bis:date,count:1};groups.push(cur);}
       }else{cur=null;}
     });
     for(const g of groups){
-      if(g.type==='Urlaub'){
-        await _sb.from('urlaub').insert({mitarbeiter_id:_ma.id,von_datum:g.von,bis_datum:g.bis,arbeitstage:g.count,jahr:mon.getFullYear(),status:'genehmigt',notiz});
-      }else if(g.type==='Krank'){
-        await _sb.from('krank').insert({mitarbeiter_id:_ma.id,von_datum:g.von,bis_datum:g.bis,tage:g.count,notiz});
-      }
+      await _sb.from('krank').insert({mitarbeiter_id:_ma.id,von_datum:g.von,bis_datum:g.bis,tage:g.count,notiz});
     }
   }
 
@@ -735,8 +736,8 @@ function renderUrlaub(){
   const yr=new Date().getFullYear();
   const genommen=_urlaubList.filter(u=>u.status==='genehmigt'&&u.jahr===yr).reduce((s,u)=>s+(u.arbeitstage||0),0);
   const anspruch=_ma.urlaub_anspruch||24,vorjahr=_ma.urlaub_vorjahr||0,offen=anspruch+vorjahr-genommen;
-  const sMap={beantragt:'Beantragt',genehmigt:'Genehmigt',abgelehnt:'Abgelehnt'};
-  const sCls={beantragt:'b-beantragt',genehmigt:'b-genehmigt',abgelehnt:'b-abgelehnt'};
+  const sMap={beantragt:'Beantragt',genehmigt:'Genehmigt',abgelehnt:'Abgelehnt',storno_beantragt:'Storno beantragt',storniert:'Storniert'};
+  const sCls={beantragt:'b-beantragt',genehmigt:'b-genehmigt',abgelehnt:'b-abgelehnt',storno_beantragt:'b-beantragt',storniert:'b-abgelehnt'};
   document.getElementById('tabUrlaub').innerHTML=`
     <div class="card">
       <div class="card-hdr">Urlaubskonto ${yr}</div>
@@ -776,8 +777,12 @@ function renderUrlaub(){
             <div class="ur-dates">${fmtDate(u.von_datum)} – ${fmtDate(u.bis_datum)}</div>
             <div class="ur-tage">${u.arbeitstage} Arbeitstag${u.arbeitstage!==1?'e':''}${u.jahr?' · '+u.jahr:''}</div>
             ${u.notiz?`<div class="ur-notiz">${esc(u.notiz)}</div>`:''}
+            ${u.storno_grund?`<div class="ur-notiz" style="color:#b45309">Storno-Grund: ${esc(u.storno_grund)}</div>`:''}
           </div>
-          <span class="badge ${sCls[u.status]||'b-entwurf'}">${u.status==='genehmigt'?ICO_CHK:''}${sMap[u.status]||u.status}</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+            <span class="badge ${sCls[u.status]||'b-entwurf'}">${u.status==='genehmigt'?ICO_CHK:''}${sMap[u.status]||u.status}</span>
+            ${u.status==='genehmigt'?`<button onclick="submitStorno('${u.id}')" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans)">Stornieren</button>`:''}
+          </div>
         </div>`).join('')}
     </div>`:''}`;
 }
@@ -813,6 +818,17 @@ async function submitUrlaub(){
   const sent=await sendEmail(von,bis,at,notiz);
   if(sent)await _sb.from('urlaub').update({email_gesendet:true}).eq('id',data.id);
   toast('Antrag eingereicht'+(sent?' — Vorgesetzter informiert':''));
+  renderUrlaub();
+}
+
+async function submitStorno(id){
+  const grund=prompt('Bitte Grund für die Stornierung angeben:');
+  if(!grund||!grund.trim()){toast('Bitte einen Grund eingeben');return;}
+  const{error}=await _sb.from('urlaub').update({status:'storno_beantragt',storno_grund:grund.trim(),storno_beantragt_am:new Date().toISOString()}).eq('id',id);
+  if(error){toast('Fehler: '+error.message);return;}
+  const u=_urlaubList.find(x=>x.id===id);
+  if(u){u.status='storno_beantragt';u.storno_grund=grund.trim();}
+  toast('Storno-Antrag eingereicht');
   renderUrlaub();
 }
 
