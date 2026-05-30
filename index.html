@@ -9085,11 +9085,14 @@ async function deleteMa(id){
 
 /* ── AUFGABEN ── */
 /* ── WIEDERKEHREND HELPERS ── */
-const _WI_LABEL={taeglich:'Täglich',woechentlich:'Wöchentlich','14-taeglich':'2-wöchentlich',monatlich:'Monatlich',quartalsweise:'Quartalsweise',jaehrlich:'Jährlich'};
-const _WI_TAGE={taeglich:1,woechentlich:7,'14-taeglich':14,monatlich:30,quartalsweise:90,jaehrlich:365};
+const _WI_LABEL={taeglich:'Täglich',woechentlich:'Wöchentlich','14-taeglich':'2-wöchentlich',monatlich:'Monatlich',quartalsweise:'Quartalsweise',jaehrlich:'Jährlich','letzter-freitag':'Letzter Freitag d. Monats'};
+const _WI_TAGE={taeglich:1,woechentlich:7,'14-taeglich':14,monatlich:30,quartalsweise:90,jaehrlich:365,'letzter-freitag':30};
+function _lastFriOfMonth(y,m){const d=new Date(y,m+1,0);d.setDate(d.getDate()-(d.getDay()-5+7)%7);return d;}
+function _nextLastFri(s){const d=new Date(s.slice(0,10)+'T00:00:00');let lf=_lastFriOfMonth(d.getFullYear(),d.getMonth());if(lf>d)return lf.toISOString().slice(0,10);let m=d.getMonth()+1,y=d.getFullYear();if(m>11){m=0;y++;}return _lastFriOfMonth(y,m).toISOString().slice(0,10);}
 function _wiCalcFaellig(aufgabe){
   const logs=(aufgabe.wiederkehrende_aufgaben_log||[]).sort((a,b)=>b.erledigt_am.localeCompare(a.erledigt_am));
   if(!logs.length)return aufgabe.start_datum||null;
+  if(aufgabe.rhythmus==='letzter-freitag')return _nextLastFri(logs[0].erledigt_am);
   const d=new Date(logs[0].erledigt_am);d.setDate(d.getDate()+(aufgabe.intervall_tage||7));
   return d.toISOString().slice(0,10);
 }
@@ -9302,7 +9305,7 @@ function openWiModal(){
         <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Priorität</div>
           <select id="wiPrio" style="${iS}"><option value="normal">Normal</option><option value="hoch">Hoch</option><option value="niedrig">Niedrig</option></select></div>
         <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Rhythmus</div>
-          <select id="wiRhythmus" style="${iS}" onchange="document.getElementById('wiIntervall').value=({taeglich:1,woechentlich:7,'14-taeglich':14,monatlich:30,quartalsweise:90,jaehrlich:365}[this.value]||7)">${rhythOpts}</select></div>
+          <select id="wiRhythmus" style="${iS}" onchange="document.getElementById('wiIntervall').value=({taeglich:1,woechentlich:7,'14-taeglich':14,monatlich:30,quartalsweise:90,jaehrlich:365,'letzter-freitag':30}[this.value]||7)">${rhythOpts}</select></div>
       </div>
       <div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Intervall in Tagen (wird automatisch gesetzt)</div>
         <input id="wiIntervall" type="number" min="1" max="365" value="7" style="${iS}"></div>

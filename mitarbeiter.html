@@ -82,6 +82,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--navy);min-height:1
 .done-info{font-size:10.5px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px}
 .done-info svg{width:10px;height:10px;stroke:var(--muted);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .empty{text-align:center;padding:36px 16px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.two-col .card{padding:10px;margin-bottom:8px}
+.two-col .card-hdr{font-size:9.5px;margin-bottom:10px}
+.two-col .task{gap:8px;padding:9px 0}
+.two-col .task-cb{width:20px;height:20px;border-radius:5px}
+.two-col .task-title{font-size:12.5px}
+.two-col .task-desc{font-size:11.5px}
+.two-col .prio{font-size:9px;padding:2px 6px}
+.two-col .empty{padding:20px 8px}
 .empty svg{width:42px;height:42px;stroke:var(--line);stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .empty-txt{color:var(--muted);font-size:13px}
 
@@ -403,12 +411,15 @@ function renderTab(t){
 }
 
 // ─── AUFGABEN ────────────────────────────────────────────────
-const _MA_WI_LABEL={taeglich:'Täglich',woechentlich:'Wöchentlich','14-taeglich':'2-wöchentlich',monatlich:'Monatlich',quartalsweise:'Quartalsweise',jaehrlich:'Jährlich'};
+const _MA_WI_LABEL={taeglich:'Täglich',woechentlich:'Wöchentlich','14-taeglich':'2-wöchentlich',monatlich:'Monatlich',quartalsweise:'Quartalsweise',jaehrlich:'Jährlich','letzter-freitag':'Letzter Freitag'};
+function _lastFriOfMonth(y,m){const d=new Date(y,m+1,0);d.setDate(d.getDate()-(d.getDay()-5+7)%7);return d;}
+function _nextLastFri(s){const d=new Date(s.slice(0,10)+'T00:00:00');let lf=_lastFriOfMonth(d.getFullYear(),d.getMonth());if(lf>d)return lf.toISOString().slice(0,10);let m=d.getMonth()+1,y=d.getFullYear();if(m>11){m=0;y++;}return _lastFriOfMonth(y,m).toISOString().slice(0,10);}
 function _maCalcFaellig(a,forName=null){
   let logs=(a.wiederkehrende_aufgaben_log||[]);
   if(forName)logs=logs.filter(l=>l.erledigt_von===forName);
   logs=logs.sort((x,y)=>y.erledigt_am.localeCompare(x.erledigt_am));
   if(!logs.length)return a.start_datum||null;
+  if(a.rhythmus==='letzter-freitag')return _nextLastFri(logs[0].erledigt_am);
   const d=new Date(logs[0].erledigt_am);d.setDate(d.getDate()+(a.intervall_tage||7));return d.toISOString().slice(0,10);
 }
 function renderAufgaben(){
@@ -463,7 +474,7 @@ function renderAufgaben(){
       </div>`;
     }).join('')}
   </div>`:'';
-  document.getElementById('tabAufgaben').innerHTML=faelligHtml+nichtFaelligHtml+(()=>{
+  const _einmaligHtml=(()=>{
   const prioBadge=p=>{
     const cls={hoch:'p-hoch',normal:'p-normal',niedrig:'p-niedrig'};
     const lbl={hoch:'Hoch',normal:'Normal',niedrig:'Niedrig'};
@@ -497,6 +508,8 @@ function renderAufgaben(){
   }
   return h;
   })();
+  const _wiedCol=faelligHtml+nichtFaelligHtml||`<div class="card" style="border-style:dashed"><div class="card-hdr">Wiederkehrende</div><div class="empty"><span class="empty-txt" style="font-size:11px">Keine wiederkehrenden<br>Aufgaben</span></div></div>`;
+  document.getElementById('tabAufgaben').innerHTML=`<div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start"><div>${_einmaligHtml}</div><div>${_wiedCol}</div></div>`;
 }
 
 async function erledigenWiederkehrend(id){
