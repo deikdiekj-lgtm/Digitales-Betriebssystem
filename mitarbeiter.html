@@ -153,6 +153,7 @@ textarea.form-inp{resize:vertical;min-height:72px}
 .btn-row{display:flex;gap:8px}
 
 /* ── TOAST ─────────────────────────────────────────────────── */
+@keyframes spin{to{transform:rotate(360deg)}}
 #toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(10px);background:#1e3a5f;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transition:all .22s;z-index:999;white-space:nowrap;pointer-events:none;max-width:88vw;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.18)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -219,10 +220,15 @@ textarea.form-inp{resize:vertical;min-height:72px}
         <div class="app-hdr-sub" id="appSub"></div>
       </div>
     </div>
-    <button class="app-logout" onclick="logout()">
-      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Abmelden
-    </button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="refreshApp()" title="Aktualisieren" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:34px;height:34px">
+        <svg id="refreshIco" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <button class="app-logout" onclick="logout()">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Abmelden
+      </button>
+    </div>
   </div>
 
   <div class="app-body">
@@ -257,7 +263,7 @@ const _KEY='sb_publishable_oDrA0qJ2tHdKi9t4JX8OeQ_-5WZeAAh';
 const _sb=supabase.createClient(_URL,_KEY);
 
 let _ma=null,_maList=[],_selId=null,_pinBuf='';
-let _aufgaben=[],_wzCache=[],_wocheOff=0,_urlaubList=[],_krankList=[],_einst={};
+let _aufgaben=[],_wzCache=[],_wocheOff=0,_urlaubList=[],_krankList=[],_wiederkehrend=[],_einst={};
 let _curTab='aufgaben';
 
 const ICO_CHK=`<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -335,14 +341,15 @@ async function checkPin(){
 
 // ─── DATA ────────────────────────────────────────────────────
 async function loadData(){
-  const[{data:af},{data:wz},{data:ul},{data:kr},{data:es}]=await Promise.all([
+  const[{data:af},{data:wz},{data:ul},{data:kr},{data:es},{data:wia}]=await Promise.all([
     _sb.from('aufgaben').select('*, aufgaben_dateien(*)').order('created_at',{ascending:false}),
     _sb.from('wochenzettel').select('*').eq('mitarbeiter_id',_ma.id).order('woche_start',{ascending:false}),
     _sb.from('urlaub').select('*').eq('mitarbeiter_id',_ma.id).order('created_at',{ascending:false}),
     _sb.from('krank').select('*').eq('mitarbeiter_id',_ma.id).order('von_datum',{ascending:false}),
-    _sb.from('einstellungen').select('*')
+    _sb.from('einstellungen').select('*'),
+    _sb.from('wiederkehrende_aufgaben').select('*,wiederkehrende_aufgaben_log(*)').eq('standort_id',_ma.standort_id).eq('aktiv',true).order('titel')
   ]);
-  _aufgaben=af||[];_wzCache=wz||[];_urlaubList=ul||[];_krankList=kr||[];
+  _aufgaben=af||[];_wzCache=wz||[];_urlaubList=ul||[];_krankList=kr||[];_wiederkehrend=wia||[];
   _einst={};(es||[]).forEach(e=>{_einst[e.key]=e.value;});
 }
 
@@ -353,11 +360,27 @@ function showApp(){
   document.getElementById('appName').textContent='Hallo, '+_ma.name.split(' ')[0];
   document.getElementById('appSub').textContent=fmtDate(new Date().toISOString().slice(0,10))+' · Tappendorf';
   document.getElementById('appAv').textContent=initials(_ma.name);
+  const _savedTab=sessionStorage.getItem('dj_ma_tab');
+  if(_savedTab)_curTab=_savedTab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('on',b.dataset.t===_curTab));
+  ['aufgaben','wochenzettel','urlaub'].forEach(n=>{
+    document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===_curTab?'block':'none';
+  });
   renderTab(_curTab);
+}
+
+async function refreshApp(){
+  const ico=document.getElementById('refreshIco');
+  if(ico)ico.style.animation='spin 0.7s linear';
+  setTimeout(()=>{if(ico)ico.style.animation='';},720);
+  await loadData();
+  renderTab(_curTab);
+  toast('Aktualisiert');
 }
 
 function logout(){
   sessionStorage.removeItem('diekjobst_ma');
+  sessionStorage.removeItem('dj_ma_tab');
   _ma=null;_pinBuf='';_selId=null;_wocheOff=0;_curTab='aufgaben';
   document.getElementById('appScreen').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
@@ -366,6 +389,7 @@ function logout(){
 
 function switchTab(t){
   _curTab=t;
+  sessionStorage.setItem('dj_ma_tab',t);
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   ['aufgaben','wochenzettel','urlaub'].forEach(n=>{
     document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===t?'block':'none';
@@ -379,9 +403,67 @@ function renderTab(t){
 }
 
 // ─── AUFGABEN ────────────────────────────────────────────────
+const _MA_WI_LABEL={taeglich:'Täglich',woechentlich:'Wöchentlich','14-taeglich':'2-wöchentlich',monatlich:'Monatlich',quartalsweise:'Quartalsweise',jaehrlich:'Jährlich'};
+function _maCalcFaellig(a,forName=null){
+  let logs=(a.wiederkehrende_aufgaben_log||[]);
+  if(forName)logs=logs.filter(l=>l.erledigt_von===forName);
+  logs=logs.sort((x,y)=>y.erledigt_am.localeCompare(x.erledigt_am));
+  if(!logs.length)return a.start_datum||null;
+  const d=new Date(logs[0].erledigt_am);d.setDate(d.getDate()+(a.intervall_tage||7));return d.toISOString().slice(0,10);
+}
 function renderAufgaben(){
   const open=_aufgaben.filter(a=>a.status==='offen');
   const done=_aufgaben.filter(a=>a.status==='erledigt');
+  // Fällige wiederkehrende Aufgaben
+  const today=new Date().toISOString().slice(0,10);
+  const _calcF=(a)=>_maCalcFaellig(a,a.zuweisung_typ==='individuell'?_ma.name:null);
+  const faellig=_wiederkehrend.filter(a=>{const f=_calcF(a);return!f||f<=today;});
+  const nichtFaellig=_wiederkehrend.filter(a=>{const f=_calcF(a);return f&&f>today;});
+  const faelligHtml=faellig.length?`<div class="card" style="border-color:#fed7aa">
+    <div class="card-hdr" style="color:#c2410c">Fällige Aufgaben <span class="cnt" style="background:#fff7ed;color:#c2410c">${faellig.length}</span></div>
+    ${faellig.map(a=>{
+      const f=_calcF(a);
+      const ueber=f&&f<today;
+      const isInd=a.zuweisung_typ==='individuell';
+      const allLogs=(a.wiederkehrende_aufgaben_log||[]).sort((x,y)=>y.erledigt_am.localeCompare(x.erledigt_am));
+      const lastAny=allLogs[0];
+      return`<div class="task">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+            <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${ueber?'#fee2e2':'#fff7ed'};color:${ueber?'#dc2626':'#c2410c'}">${ueber?'Überfällig':'Heute fällig'}</span>
+            <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:${isInd?'#eff6ff':'#f1f5f9'};color:${isInd?'#1d4ed8':'#64748b'}">${isInd?'Individuell':'Team'}</span>
+            <span style="font-size:10px;color:var(--muted)">${_MA_WI_LABEL[a.rhythmus]||a.rhythmus}</span>
+          </div>
+          <div class="task-title">${esc(a.titel)}</div>
+          ${a.beschreibung?`<div class="task-desc">${esc(a.beschreibung)}</div>`:''}
+          ${!isInd&&lastAny?`<div style="font-size:10.5px;color:var(--muted);margin-top:3px">Zuletzt: ${esc(lastAny.erledigt_von)} am ${fmtDate(lastAny.erledigt_am?.slice(0,10))}</div>`:''}
+        </div>
+        <button onclick="erledigenWiederkehrend('${a.id}')" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);flex-shrink:0;margin-top:4px">Erledigt</button>
+      </div>`;
+    }).join('')}
+  </div>`:'';
+  const nichtFaelligHtml=nichtFaellig.length?`<div class="card">
+    <div class="card-hdr">Wiederkehrend – Erledigt <span class="cnt">${nichtFaellig.length}</span></div>
+    ${nichtFaellig.map(a=>{
+      const isInd=a.zuweisung_typ==='individuell';
+      const allLogs=(a.wiederkehrende_aufgaben_log||[]).sort((x,y)=>y.erledigt_am.localeCompare(x.erledigt_am));
+      const lastLog=isInd?allLogs.find(l=>l.erledigt_von===_ma.name):allLogs[0];
+      const f=_calcF(a);
+      return`<div class="task">
+        <div class="task-cb done"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+            <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:${isInd?'#eff6ff':'#f1f5f9'};color:${isInd?'#1d4ed8':'#64748b'}">${isInd?'Individuell':'Team'}</span>
+            <span style="font-size:10px;color:var(--muted)">${_MA_WI_LABEL[a.rhythmus]||a.rhythmus}</span>
+          </div>
+          <div class="task-title">${esc(a.titel)}</div>
+          ${lastLog?`<div class="done-info"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>${esc(lastLog.erledigt_von)} · ${fmtDate(lastLog.erledigt_am?.slice(0,10))}</div>`:''}
+          ${f?`<div style="font-size:10.5px;color:var(--muted);margin-top:2px">Nächste Fälligkeit: ${fmtDate(f)}</div>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`:'';
+  document.getElementById('tabAufgaben').innerHTML=faelligHtml+nichtFaelligHtml+(()=>{
   const prioBadge=p=>{
     const cls={hoch:'p-hoch',normal:'p-normal',niedrig:'p-niedrig'};
     const lbl={hoch:'Hoch',normal:'Normal',niedrig:'Niedrig'};
@@ -413,7 +495,21 @@ function renderAufgaben(){
   if(done.length){
     h+=`<div class="card"><div class="card-hdr">Erledigt <span class="cnt">${done.length}</span></div>${done.slice(0,5).map(a=>row(a,true)).join('')}${done.length>5?`<div style="text-align:center;padding-top:10px;font-size:12px;color:var(--muted)">+ ${done.length-5} weitere</div>`:''}</div>`;
   }
-  document.getElementById('tabAufgaben').innerHTML=h;
+  return h;
+  })();
+}
+
+async function erledigenWiederkehrend(id){
+  const a=_wiederkehrend.find(x=>x.id===id);
+  if(!a)return;
+  const now=new Date().toISOString();
+  const today=new Date().toISOString().slice(0,10);
+  const{error}=await _sb.from('wiederkehrende_aufgaben_log').insert({aufgabe_id:id,erledigt_von:_ma.name,erledigt_am:now,faellig_am:today});
+  if(error){toast('Fehler: '+error.message);return;}
+  if(!a.wiederkehrende_aufgaben_log)a.wiederkehrende_aufgaben_log=[];
+  a.wiederkehrende_aufgaben_log.unshift({erledigt_am:now,erledigt_von:_ma.name});
+  renderAufgaben();
+  toast('Aufgabe als erledigt markiert');
 }
 
 async function uploadAufgabeBild(aufgabeId){

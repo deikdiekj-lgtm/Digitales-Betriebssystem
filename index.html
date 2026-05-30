@@ -831,6 +831,9 @@ tbody td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
   <div class="hd-right" style="display:flex;align-items:center;gap:12px;">
     <span class="hd-clock" id="clock"></span>
     <span id="loggedInName" style="display:none;color:rgba(255,255,255,.75);font-size:12px;font-weight:500;"></span>
+    <button id="refreshBtnMain" onclick="_doRefresh()" title="Aktualisieren" style="display:none;background:none;border:1px solid rgba(255,255,255,.25);border-radius:6px;color:#fff;padding:4px 8px;cursor:pointer;opacity:.85;display:flex;align-items:center;justify-content:center" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.85">
+      <svg id="refreshIcoMain" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
     <button id="logoutBtn" onclick="doLogout()" style="display:none;background:none;border:1px solid rgba(255,255,255,.25);border-radius:6px;color:#fff;font-size:11px;font-weight:600;padding:4px 11px;cursor:pointer;font-family:var(--sans);opacity:.85;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.85">Abmelden</button>
   </div>
 </header>
@@ -5215,10 +5218,19 @@ async function doLogin(){
   showApp();
 }
 
+async function _doRefresh(){
+  const ico=document.getElementById('refreshIcoMain');
+  if(ico)ico.style.animation='spin 0.7s linear';
+  setTimeout(()=>{if(ico)ico.style.animation='';},720);
+  await init();
+  showModule(_currentModule||sessionStorage.getItem('dj_module')||'home');
+}
 async function doLogout(){
   await _sb.auth.signOut();
+  sessionStorage.removeItem('dj_module');
   document.getElementById('loginOverlay').style.display='flex';
   document.getElementById('logoutBtn').style.display='none';
+  document.getElementById('refreshBtnMain').style.display='none';
   document.getElementById('loggedInName').style.display='none';
   document.getElementById('loginPassword').value='';
 }
@@ -5234,6 +5246,7 @@ async function showApp(){
   _cleanLegacyStorage();
   document.getElementById('loginOverlay').style.display='none';
   document.getElementById('logoutBtn').style.display='';
+  document.getElementById('refreshBtnMain').style.display='flex';
   const {data:{session}}=await _sb.auth.getSession();
   if(session?.user?.email){
     const username=session.user.email.split('@')[0];
@@ -5242,7 +5255,9 @@ async function showApp(){
     nameEl.textContent='Hallo, '+displayName;
     nameEl.style.display='';
   }
-  init();
+  await init();
+  const _savedModule=sessionStorage.getItem('dj_module');
+  if(_savedModule&&_savedModule!=='home')showModule(_savedModule);
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{
@@ -6607,7 +6622,10 @@ function renderAuswertung(){
   }
 }
 
+let _currentModule='home';
 function showModule(m){
+  _currentModule=m;
+  sessionStorage.setItem('dj_module',m);
   document.querySelectorAll('.main-tab').forEach(t=>t.classList.toggle('active',t.dataset.module===m));
   const kalayout=document.getElementById('ka-layout');
   kalayout.style.display=(m==='abfall')?'flex':'none';
@@ -8714,7 +8732,6 @@ function renderStandorte(){
       </div>
       <div style="padding:10px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end" onclick="event.stopPropagation()">
         <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px" onclick="editStd('${s.id}')">Bearbeiten</button>
-        <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;color:#dc2626;border-color:#fca5a5" onclick="deleteStd('${s.id}')">Löschen</button>
       </div>
     </div>`;
   }).join('');
@@ -8742,12 +8759,6 @@ function openStdModal(id){
 }
 function closeStdModal(){document.getElementById('stdModal').classList.add('hidden');}
 function editStd(id){openStdModal(id);}
-async function deleteStd(id){
-  if(!confirm('Standort wirklich löschen?'))return;
-  await _sb.from('standorte').delete().eq('id',id);
-  await _stdSyncFromSupabase();
-  renderStandorte();
-}
 async function saveStd(){
   const name=document.getElementById('stdName').value.trim();
   const ort=document.getElementById('stdOrt').value.trim();
@@ -8890,7 +8901,8 @@ function renderStdDocTabContent(tab){
     <div id="stdDocSubEmpty-${tab}" style="color:var(--muted);font-size:13px;text-align:center;padding:24px;background:var(--bg);border-radius:8px;display:none">Noch keine Dokumente in diesem Bereich.</div>`;
 }
 let _stdPersonalTab='uebersicht';
-let _maCache=[],_aufgabenCache=[],_wzMgmtCache=[],_urlaubMgmtCache=[],_einstCache={},_krankCache=[];
+let _maCache=[],_aufgabenCache=[],_wzMgmtCache=[],_urlaubMgmtCache=[],_einstCache={},_krankCache=[],_wiederkehrendCache=[];
+let _aufgabenSubTab='einmalig',_wiDetailId=null,_wiErledigenId=null;
 const _wzY=new Date().getFullYear();
 let _wzFilter={maId:null,von:null,bis:null},_wzDetailId=null,_wzChartYear=new Date().getFullYear(),_wzChartMaId=null;
 async function renderStdPersonalTab(){
@@ -8903,16 +8915,18 @@ async function renderStdPersonalTab(){
 }
 
 async function loadPersonalData(standortId){
-  const[{data:ma},{data:af},{data:wz},{data:ul},{data:kr},{data:es}]=await Promise.all([
+  const[{data:ma},{data:af},{data:wz},{data:ul},{data:kr},{data:es},{data:wia}]=await Promise.all([
     _sb.from('mitarbeiter').select('*').eq('standort_id',standortId).eq('aktiv',true).order('name'),
     _sb.from('aufgaben').select('*, aufgaben_dateien(*)').eq('standort_id',standortId).order('created_at',{ascending:false}),
     _sb.from('wochenzettel').select('*').order('woche_start',{ascending:false}),
     _sb.from('urlaub').select('*').order('created_at',{ascending:false}),
     _sb.from('krank').select('*').order('von_datum',{ascending:false}),
-    _sb.from('einstellungen').select('*')
+    _sb.from('einstellungen').select('*'),
+    _sb.from('wiederkehrende_aufgaben').select('*,wiederkehrende_aufgaben_log(*)').eq('standort_id',standortId).order('titel')
   ]);
   _maCache=ma||[];
   _aufgabenCache=af||[];
+  _wiederkehrendCache=wia||[];
   const maIds=new Set(_maCache.map(m=>m.id));
   _wzMgmtCache=(wz||[]).filter(w=>maIds.has(w.mitarbeiter_id));
   _urlaubMgmtCache=(ul||[]).filter(u=>maIds.has(u.mitarbeiter_id));
@@ -9070,6 +9084,26 @@ async function deleteMa(id){
 }
 
 /* ── AUFGABEN ── */
+/* ── WIEDERKEHREND HELPERS ── */
+const _WI_LABEL={taeglich:'Täglich',woechentlich:'Wöchentlich','14-taeglich':'2-wöchentlich',monatlich:'Monatlich',quartalsweise:'Quartalsweise',jaehrlich:'Jährlich'};
+const _WI_TAGE={taeglich:1,woechentlich:7,'14-taeglich':14,monatlich:30,quartalsweise:90,jaehrlich:365};
+function _wiCalcFaellig(aufgabe){
+  const logs=(aufgabe.wiederkehrende_aufgaben_log||[]).sort((a,b)=>b.erledigt_am.localeCompare(a.erledigt_am));
+  if(!logs.length)return aufgabe.start_datum||null;
+  const d=new Date(logs[0].erledigt_am);d.setDate(d.getDate()+(aufgabe.intervall_tage||7));
+  return d.toISOString().slice(0,10);
+}
+function _wiStatus(faelligDate){
+  if(!faelligDate)return{label:'Fällig',color:'#c2410c',bg:'#fff7ed',prio:1};
+  const today=new Date().toISOString().slice(0,10);
+  const diff=(new Date(faelligDate)-new Date(today))/86400000;
+  if(diff<0)return{label:'Überfällig',color:'#dc2626',bg:'#fee2e2',prio:0};
+  if(diff<1)return{label:'Heute',color:'#c2410c',bg:'#fff7ed',prio:1};
+  if(diff<=3)return{label:'Bald fällig',color:'#ca8a04',bg:'#fefce8',prio:2};
+  return{label:'OK',color:'#16a34a',bg:'#f0fdf4',prio:3};
+}
+function _switchAufgabenTab(t){_aufgabenSubTab=t;_wiDetailId=null;_wiErledigenId=null;_renderPersonalSubTab('aufgaben');}
+
 function _persAufgaben(){
   const open=_aufgabenCache.filter(a=>a.status==='offen');
   const done=_aufgabenCache.filter(a=>a.status==='erledigt');
@@ -9094,9 +9128,14 @@ function _persAufgaben(){
     </button>
   </div>`;
   };
+  const subTabBar=`<div style="display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px">
+    <button onclick="_switchAufgabenTab('einmalig')" style="padding:6px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:var(--sans);background:${_aufgabenSubTab==='einmalig'?'var(--navy)':'transparent'};color:${_aufgabenSubTab==='einmalig'?'#fff':'var(--muted)'}">Aufgaben</button>
+    <button onclick="_switchAufgabenTab('wiederkehrend')" style="padding:6px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:var(--sans);background:${_aufgabenSubTab==='wiederkehrend'?'var(--navy)':'transparent'};color:${_aufgabenSubTab==='wiederkehrend'?'#fff':'var(--muted)'}">Wiederkehrend</button>
+  </div>`;
+  if(_aufgabenSubTab==='wiederkehrend')return _persWiederkehrend(subTabBar);
   return`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:13px;font-weight:700;color:var(--navy)">Aufgaben</div>
+      ${subTabBar}
       <button onclick="openAufgabeModal()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:6px">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Neue Aufgabe</button>
@@ -9115,6 +9154,92 @@ function _persAufgaben(){
       </div>
       ${done.slice(0,10).map(row).join('')}</div>`:''}
     ${!open.length&&!done.length?'<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;font-style:italic">Noch keine Aufgaben angelegt.</div>':''}`;
+}
+
+function _persWiederkehrend(subTabBar){
+  const iS='border:1.5px solid var(--line);border-radius:8px;padding:8px 11px;font-family:var(--sans);font-size:13px;color:var(--navy);outline:none;background:var(--white);width:100%';
+  const sorted=[..._wiederkehrendCache].sort((a,b)=>{
+    if(a.aktiv===false&&b.aktiv!==false)return 1;
+    if(a.aktiv!==false&&b.aktiv===false)return -1;
+    const sa=_wiStatus(_wiCalcFaellig(a)),sb=_wiStatus(_wiCalcFaellig(b));
+    return sa.prio-sb.prio||a.titel.localeCompare(b.titel);
+  });
+  const rows=sorted.map(a=>{
+    const faellig=_wiCalcFaellig(a);
+    const st=_wiStatus(faellig);
+    const logs=(a.wiederkehrende_aufgaben_log||[]).sort((x,y)=>y.erledigt_am.localeCompare(x.erledigt_am));
+    const lastLog=logs[0];
+    const isInd=a.zuweisung_typ==='individuell';
+    const showDetail=_wiDetailId===a.id;
+    const showErl=_wiErledigenId===a.id;
+    let histContent='';
+    if(showDetail){
+      if(isInd){
+        const byP={};
+        logs.forEach(l=>{if(!byP[l.erledigt_von]||l.erledigt_am>byP[l.erledigt_von].erledigt_am)byP[l.erledigt_von]=l;});
+        const td=new Date().toISOString().slice(0,10);
+        histContent=_maCache.map(ma=>{
+          const last=byP[ma.name];
+          const nf=last?new Date(new Date(last.erledigt_am).getTime()+(a.intervall_tage||7)*86400000).toISOString().slice(0,10):null;
+          const due=!nf||nf<=td;
+          return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:11.5px">
+            <span style="color:var(--navy);font-weight:600">${h(ma.name)}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${last?`<span style="color:var(--muted)">${_fmtD(last.erledigt_am?.slice(0,10))}</span>`:'<span style="color:var(--muted)">–</span>'}
+              <span style="padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;background:${due?'#fee2e2':'#dcfce7'};color:${due?'#dc2626':'#15803d'}">${due?'Fällig':'OK'}</span>
+            </div>
+          </div>`;
+        }).join('')||'<div style="font-size:12px;color:var(--muted);font-style:italic">Keine Mitarbeiter.</div>';
+      }else{
+        histContent=logs.length?logs.slice(0,8).map(l=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--line);font-size:11.5px">
+          <span style="color:var(--navy);font-weight:600">${h(l.erledigt_von)}</span>
+          <span style="color:var(--muted)">${_fmtD(l.erledigt_am?.slice(0,10))}${l.notiz?` · ${h(l.notiz)}`:''}</span>
+        </div>`).join(''):'<div style="font-size:12px;color:var(--muted);font-style:italic">Noch nicht erledigt.</div>';
+      }
+    }
+    const history=showDetail?`<div style="border-top:1px solid var(--line);padding:10px 0 4px">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${isInd?`Status je Mitarbeiter (${_maCache.length})`:`Verlauf (${logs.length})`}</div>
+      ${histContent}
+    </div>`:'';
+    const erlForm=showErl?`<div style="border-top:1px solid var(--line);padding:10px 0 4px;display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end">
+      <div><div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:3px">Erledigt von</div><input id="wiErlVon" type="text" style="${iS}" placeholder="Name…"></div>
+      <div><div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:3px">Notiz (opt.)</div><input id="wiErlNotiz" type="text" style="${iS}" placeholder="…"></div>
+      <button onclick="_wiSaveErledigt('${a.id}')" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans)">Speichern</button>
+    </div>`:'';
+    const statusBadge=a.aktiv===false?`<span style="padding:2px 9px;border-radius:12px;font-size:10.5px;font-weight:700;background:#fef9c3;color:#a16207">Deaktiviert</span>`:`<span style="padding:2px 9px;border-radius:12px;font-size:10.5px;font-weight:700;background:${st.bg};color:${st.color}">${st.label}</span>`;
+    const infoLine=a.aktiv===false?`<div style="font-size:11px;color:#a16207;margin-top:4px">${lastLog?`Zuletzt: ${h(lastLog.erledigt_von)} am ${_fmtD(lastLog.erledigt_am?.slice(0,10))}`:'Noch nie erledigt'}</div>`:`<div style="font-size:11px;color:var(--muted);margin-top:4px">${faellig?`${!lastLog&&a.start_datum?'Startet':'Nächste Fälligkeit'}: ${_fmtD(faellig)}`:'Noch nie erledigt'}${lastLog?` · Zuletzt: ${h(lastLog.erledigt_von)} am ${_fmtD(lastLog.erledigt_am?.slice(0,10))}`:''}</div>`;
+    const delBtn=`<button onclick="deleteWi('${a.id}')" style="background:none;border:1.5px solid #fca5a5;color:#dc2626;border-radius:7px;padding:5px 13px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--sans);margin-left:auto">Löschen</button>`;
+    const btnRow=a.aktiv===false?`<button onclick="reaktivateWi('${a.id}')" style="background:#ca8a04;color:#fff;border:none;border-radius:7px;padding:5px 13px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--sans)">Reaktivieren</button>${delBtn}`:`<button onclick="_wiErledigenId='${a.id}';_wiDetailId=null;_renderPersonalSubTab('aufgaben')" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:5px 13px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--sans)">Erledigen</button>
+      <button onclick="_wiDetailId=${showDetail?'null':`'${a.id}'`};_wiErledigenId=null;_renderPersonalSubTab('aufgaben')" style="background:var(--bg);border:1.5px solid var(--line);color:var(--muted);border-radius:7px;padding:5px 13px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--sans)">${showDetail?'Schließen':(isInd?'Status je MA':'Verlauf')}</button>
+      <button onclick="deactivateWi('${a.id}')" style="background:none;border:1.5px solid var(--line);color:var(--muted);border-radius:7px;padding:5px 13px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--sans)">Deaktivieren</button>${delBtn}`;
+    return`<div style="${a.aktiv===false?'background:#fefce8;border:1px solid #fde047':'background:var(--white);border:1px solid var(--line)'};border-radius:10px;padding:14px 16px;margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+            ${statusBadge}
+            <span style="font-size:10px;color:var(--muted)">${_WI_LABEL[a.rhythmus]||a.rhythmus}</span>
+            <span style="padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;background:${isInd?'#eff6ff':'#f1f5f9'};color:${isInd?'#1d4ed8':'#64748b'}">${isInd?'Individuell':'Team'}</span>
+          </div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--navy)">${h(a.titel)}</div>
+          ${a.beschreibung?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${h(a.beschreibung)}</div>`:''}
+          ${infoLine}
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
+        ${btnRow}
+      </div>
+      ${a.aktiv===false?'':erlForm+history}
+    </div>`;
+  }).join('');
+  return`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      ${subTabBar}
+      <button onclick="openWiModal()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Neue Aufgabe</button>
+    </div>
+    <div id="wiModalWrap"></div>
+    ${rows||'<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;font-style:italic">Noch keine wiederkehrenden Aufgaben angelegt.</div>'}`;
 }
 
 function openAufgabeModal(){
@@ -9162,6 +9287,84 @@ async function saveAufgabe(){
   toast('Aufgabe angelegt ✓');
   await loadPersonalData(_stdDetailId);
   _renderPersonalSubTab('aufgaben');
+}
+function openWiModal(){
+  const iS='border:1.5px solid var(--line);border-radius:8px;padding:8px 11px;font-family:var(--sans);font-size:13px;color:var(--navy);outline:none;background:var(--white);width:100%';
+  const rhythOpts=Object.entries(_WI_LABEL).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  document.getElementById('wiModalWrap').innerHTML=`
+    <div style="background:var(--white);border:1.5px solid var(--navy);border-radius:10px;padding:16px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">Neue wiederkehrende Aufgabe</div>
+      <div style="margin-bottom:9px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Titel *</div>
+        <input id="wiTitel" type="text" placeholder="Aufgabentitel…" style="${iS}"></div>
+      <div style="margin-bottom:9px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Beschreibung</div>
+        <input id="wiBeschr" type="text" placeholder="Optional…" style="${iS}"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Priorität</div>
+          <select id="wiPrio" style="${iS}"><option value="normal">Normal</option><option value="hoch">Hoch</option><option value="niedrig">Niedrig</option></select></div>
+        <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Rhythmus</div>
+          <select id="wiRhythmus" style="${iS}" onchange="document.getElementById('wiIntervall').value=({taeglich:1,woechentlich:7,'14-taeglich':14,monatlich:30,quartalsweise:90,jaehrlich:365}[this.value]||7)">${rhythOpts}</select></div>
+      </div>
+      <div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Intervall in Tagen (wird automatisch gesetzt)</div>
+        <input id="wiIntervall" type="number" min="1" max="365" value="7" style="${iS}"></div>
+      <div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Startdatum (erste Fälligkeit)</div>
+        <input id="wiStart" type="date" style="${iS}"></div>
+      <div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Zuweisung</div>
+        <select id="wiZuwTyp" style="${iS}">
+          <option value="team">Team — einer erledigt für alle</option>
+          <option value="individuell">Individuell — jeder MA für sich</option>
+        </select></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="saveWiAufgabe()" style="flex:2;background:var(--navy);color:#fff;border:none;border-radius:7px;padding:10px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">Anlegen</button>
+        <button onclick="document.getElementById('wiModalWrap').innerHTML=''" style="flex:1;background:none;border:1.5px solid var(--line);color:var(--muted);border-radius:7px;padding:10px;font-family:var(--sans);font-size:13px;cursor:pointer">Abbrechen</button>
+      </div>
+    </div>`;}
+async function saveWiAufgabe(){
+  const titel=(document.getElementById('wiTitel')?.value||'').trim();
+  if(!titel){toast('Titel erforderlich');return;}
+  const rhythmus=document.getElementById('wiRhythmus')?.value||'woechentlich';
+  const intervall=parseInt(document.getElementById('wiIntervall')?.value)||_WI_TAGE[rhythmus]||7;
+  const zuwTyp=document.getElementById('wiZuwTyp')?.value||'team';
+  const startDatum=document.getElementById('wiStart')?.value||null;
+  const{data,error}=await _sb.from('wiederkehrende_aufgaben').insert({
+    titel,beschreibung:document.getElementById('wiBeschr')?.value||'',
+    prioritaet:document.getElementById('wiPrio')?.value||'normal',
+    rhythmus,intervall_tage:intervall,zuweisung_typ:zuwTyp,start_datum:startDatum,standort_id:_stdDetailId,aktiv:true
+  }).select().single();
+  if(error){toast('Fehler: '+error.message);return;}
+  toast('Aufgabe angelegt ✓');
+  await loadPersonalData(_stdDetailId);_renderPersonalSubTab('aufgaben');
+}
+async function _wiSaveErledigt(id){
+  const von=(document.getElementById('wiErlVon')?.value||'').trim()||'Management';
+  const notiz=(document.getElementById('wiErlNotiz')?.value||'').trim();
+  const aufgabe=_wiederkehrendCache.find(a=>a.id===id);
+  if(!aufgabe)return;
+  const faelligAm=_wiCalcFaellig(aufgabe);
+  const{data,error}=await _sb.from('wiederkehrende_aufgaben_log').insert({aufgabe_id:id,erledigt_von:von,erledigt_am:new Date().toISOString(),faellig_am:faelligAm,notiz:notiz||null}).select().single();
+  if(error){toast('Fehler: '+error.message);return;}
+  if(!aufgabe.wiederkehrende_aufgaben_log)aufgabe.wiederkehrende_aufgaben_log=[];
+  aufgabe.wiederkehrende_aufgaben_log.push(data);
+  _wiErledigenId=null;toast('Als erledigt markiert ✓');_renderPersonalSubTab('aufgaben');
+}
+async function deactivateWi(id){
+  if(!confirm('Aufgabe deaktivieren? Sie bleibt mit Verlauf erhalten.'))return;
+  const{error}=await _sb.from('wiederkehrende_aufgaben').update({aktiv:false}).eq('id',id);
+  if(error){toast('Fehler: '+error.message);return;}
+  const t=_wiederkehrendCache.find(a=>a.id===id);if(t)t.aktiv=false;
+  toast('Deaktiviert');_renderPersonalSubTab('aufgaben');
+}
+async function reaktivateWi(id){
+  const{error}=await _sb.from('wiederkehrende_aufgaben').update({aktiv:true}).eq('id',id);
+  if(error){toast('Fehler: '+error.message);return;}
+  const t=_wiederkehrendCache.find(a=>a.id===id);if(t)t.aktiv=true;
+  toast('Reaktiviert');_renderPersonalSubTab('aufgaben');
+}
+async function deleteWi(id){
+  if(!confirm('Aufgabe und gesamten Verlauf unwiderruflich löschen?'))return;
+  const{error}=await _sb.from('wiederkehrende_aufgaben').delete().eq('id',id);
+  if(error){toast('Fehler: '+error.message);return;}
+  _wiederkehrendCache=_wiederkehrendCache.filter(a=>a.id!==id);
+  toast('Aufgabe gelöscht');_renderPersonalSubTab('aufgaben');
 }
 function _imgModal(url){
   const el=document.createElement('div');
